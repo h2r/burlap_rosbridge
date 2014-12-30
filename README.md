@@ -67,14 +67,14 @@ public static void main(String[] args) {
 	//create environment with 2000ms (2s) action execution time
 	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, actionTopic, 2000);
 	env.blockUntilStateReceived();
+	
+	//optionally, uncomment the below so that you can see the received state printed to the terminal
+	//env.setPrintStateAsReceived(true);
 
 	//create a domain wrapper of the environment so that wrapped domain's actions go to
 	//to the environment, rather than the normal GridWorld action simulator code.
 	DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
 	final Domain envDomain = envDomainWrapper.generateDomain();
-	
-	//optionally, uncomment the below so that you can see the received state printed to the terminal
-	//env.setPrintStateAsReceived(true);
 
 	//create a random policy for control that connects to the environment wrapped domai
 	Policy randPolicy = new Policy.RandomPolicy(envDomain);
