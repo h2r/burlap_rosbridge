@@ -8,7 +8,8 @@ an asynchronous environment, so there is no checking for action "completion." In
 the environment simply waits a specified time for the supplied action to complete and the current state to be updated
 before returning control to the client code.
 
-States are communicated to the BURLAP environment over ROS messages with type `burlap_msgs/burlap_state`.
+States are communicated to the BURLAP environment over ROS messages with type `burlap_msgs/burlap_state`. You can get
+the neccessary ROS message definition from the [burlap_msgs](https://github.com/h2r/burlap_msgs) project.
 
 If you need to do additional state processing not provided in the communicated ROS message (e.g., add additional "virutal" objects to the received state) you may do so by overriding the method `onStateReceive(State)`.
 
