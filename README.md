@@ -72,6 +72,9 @@ public static void main(String[] args) {
 	//to the environment, rather than the normal GridWorld action simulator code.
 	DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
 	final Domain envDomain = envDomainWrapper.generateDomain();
+	
+	//optionally, uncomment the below so that you can see the received state printed to the terminal
+	//env.setPrintStateAsReceived(true);
 
 	//create a random policy for control that connects to the environment wrapped domai
 	Policy randPolicy = new Policy.RandomPolicy(envDomain);
