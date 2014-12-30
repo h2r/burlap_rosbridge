@@ -10,7 +10,7 @@ before returning control to the client code. More information below.
 
 States are communicated to the BURLAP environment over ROS messages adhering to the burlap_msgs/burlap_state ROS message type.
 
-#Compiling
+##Compiling
 
 Compile with:
 
@@ -41,7 +41,7 @@ The produced Java doc will be in the `doc` folder.
 
 profit.
 
-#Example code.
+##Example code.
 In the below code we assume that ROS is being run on the local host (port 9090 as default for ROS Bridge)
 and there is a ROS topic named `/burlap_state` that has a Grid World state message being published.
 Actions will be published to the topic `/burlap_action` and it is assumed some process on ROS is subscribe to that topic to actuate
