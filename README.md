@@ -14,7 +14,7 @@ If you need to do additional state processing not provided in the communicated R
 
 Although BURLAP is currently compatible with Java 6, You will need Java 7 to use this library because the ROS Bridge Websocket connection (provided by our [java_rosbridge](https://github.com/h2r/java_rosbridge) library) uses Jetty 9, which requires Java 7.
 
-See the Java doc for more informaiton.
+See the Java doc and example code below for more informaiton.
 
 ##Compiling
 
