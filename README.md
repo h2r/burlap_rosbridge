@@ -3,7 +3,7 @@ burlap_rosbridge
 
 A BURLAP library extension for creating a ROS BURLAP Environment where the ROS connection is handled via ROS Bridge.
 Currently, only one class is provided: `AsynchronousRosEnvironment` (package `burlap.ros`), which is used for creating an Environment in which
-the current state is received over ROSBridge and actions are published to a topic (as a string) to Ros Bridge. This is
+the current state is received over ROSBridge and actions are published to a ROS topic (as a `std_msgs/String.msg` ROS message) over Ros Bridge. This environment is
 an asynchronous environment, so there is no checking for action "completion." Instead, after each action execution,
 the environment simply waits a specified time for the supplied action to complete and the current state to be updated
 before returning control to the client code. More information below.
