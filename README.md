@@ -6,13 +6,15 @@ Currently, only one class is provided: `AsynchronousRosEnvironment` (package `bu
 the current state is received over ROSBridge and actions are published to a ROS topic (as a `std_msgs/String.msg` ROS message) over Ros Bridge. This environment is
 an asynchronous environment, so there is no checking for action "completion." Instead, after each action execution,
 the environment simply waits a specified time for the supplied action to complete and the current state to be updated
-before returning control to the client code. More information below.
+before returning control to the client code.
 
 States are communicated to the BURLAP environment over ROS messages with type `burlap_msgs/burlap_state`.
 
 If you need to do additional state processing not provided in the communicated ROS message (e.g., add additional "virutal" objects to the received state) you may do so by overriding the method `onStateReceive(State)`.
 
 Although BURLAP is currently compatible with Java 6, You will need Java 7 to use this library because the ROS Bridge Websocket connection (provided by our [java_rosbridge](https://github.com/h2r/java_rosbridge) library) uses Jetty 9, which requires Java 7.
+
+See the Java doc for more informaiton.
 
 ##Compiling
 
