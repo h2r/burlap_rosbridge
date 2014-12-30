@@ -50,31 +50,31 @@ them. We allow 2 seconds for action execution. The behavior of the robot is cont
 ```
 public static void main(String[] args) {
 
-    //define the grid world
-		GridWorldDomain gwd = new GridWorldDomain(11, 11);
-		gwd.makeEmptyMap();
-		final Domain domain = gwd.generateDomain();
+	//define the grid world
+	GridWorldDomain gwd = new GridWorldDomain(11, 11);
+	gwd.makeEmptyMap();
+	final Domain domain = gwd.generateDomain();
 
-    //setup ROS information
-		String uri = "ws://localhost:9090";
-		String stateTopic = "/burlap_state";
-		String actionTopic = "/burlap_action";
+	//setup ROS information
+	String uri = "ws://localhost:9090";
+	String stateTopic = "/burlap_state";
+	String actionTopic = "/burlap_action";
 
-    //create environment
-		RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, actionTopic, 2000);
-		env.blockUntilStateReceived();
+	//create environment
+	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, actionTopic, 2000);
+	env.blockUntilStateReceived();
 
-    //create a domain wrapper of the environment to handle policy execution
-		DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
-		final Domain envDomain = envDomainWrapper.generateDomain();
+	//create a domain wrapper of the environment to handle policy execution
+	DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
+	final Domain envDomain = envDomainWrapper.generateDomain();
 
-    //create a random policy for control
-		Policy randPolicy = new Policy.RandomPolicy(envDomain);
+	//create a random policy for control
+	Policy randPolicy = new Policy.RandomPolicy(envDomain);
 		
-		//begin behavior for 100 steps (200 seconds)
-		randPolicy.evaluateBehavior(env.getCurState(), new NullRewardFunction(), 100);
+	//begin behavior for 100 steps (200 seconds)
+	randPolicy.evaluateBehavior(env.getCurState(), new NullRewardFunction(), 100);
 
-	}
+}
 
 ```
 
