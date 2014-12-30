@@ -76,7 +76,7 @@ public static void main(String[] args) {
 	DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
 	final Domain envDomain = envDomainWrapper.generateDomain();
 
-	//create a random policy for control that connects to the environment wrapped domai
+	//create a random policy for control that connects to the environment wrapped domain
 	Policy randPolicy = new Policy.RandomPolicy(envDomain);
 	
 	//begin behavior for 100 steps (200 seconds)
