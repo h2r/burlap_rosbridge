@@ -67,7 +67,7 @@ public static void main(String[] args) {
 	String actionTopic = "/burlap_action";
 
 	//create environment with 2000ms (2s) action execution time
-	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, actionTopic, 2000);
+	AsynchronousRosEnvironment env = new AsynchronousRosEnvironment(domain, uri, stateTopic, actionTopic, 2000);
 	env.blockUntilStateReceived();
 	
 	//optionally, uncomment the below so that you can see the received state printed to the terminal
