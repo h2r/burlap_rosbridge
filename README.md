@@ -1,14 +1,18 @@
 burlap_rosbridge
 ================
 
-A library for creating a ROS BURLAP Environment, where the ROS connection is handled via ROS Bridge.
-Currently, only one class is provided AsynchronousRosEnvironment, which is used for creating an Environment in which
+A BURLAP library extension for creating a ROS BURLAP Environment where the ROS connection is handled via ROS Bridge.
+Currently, only one class is provided: `AsynchronousRosEnvironment` (package `burlap.ros`), which is used for creating an Environment in which
 the current state is received over ROSBridge and actions are published to a topic (as a string) to Ros Bridge. This is
 an asynchronous environment, so there is no checking for action "completion." Instead, after each action execution,
 the environment simply waits a specified time for the supplied action to complete and the current state to be updated
 before returning control to the client code. More information below.
 
-States are communicated to the BURLAP environment over ROS messages adhering to the burlap_msgs/burlap_state ROS message type.
+States are communicated to the BURLAP environment over ROS messages with type `burlap_msgs/burlap_state`.
+
+If you need to do additional state processing not provided in the communicated ROS message (e.g., add additional "virutal" objects to the received state) you may do so by overriding the method `onStateReceive(State)`.
+
+Although BURLAP is currently compatible with Java 6, You will need Java 7 to use this library because the ROS Bridge Websocket connection (provided by our [java_rosbridge](https://github.com/h2r/java_rosbridge) library) uses Jetty 9, which requires Java 7.
 
 ##Compiling
 
@@ -70,7 +74,7 @@ public static void main(String[] args) {
 
 	//create a random policy for control
 	Policy randPolicy = new Policy.RandomPolicy(envDomain);
-		
+	
 	//begin behavior for 100 steps (200 seconds)
 	randPolicy.evaluateBehavior(env.getCurState(), new NullRewardFunction(), 100);
 
