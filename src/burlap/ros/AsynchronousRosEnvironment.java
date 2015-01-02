@@ -50,6 +50,10 @@ import java.util.Map;
  * Note that the the environment's current state will be updated as frequently as ROSBridge provides
  * updates, but the states before and after actions returned are those from fixed time intervals set by the client
  * (and described above).
+ * <br/>
+ * You may want to specify a throttle rate and queue size for how quickly the environment receives state message
+ * from ROS Bridge. If States are published too quickly, you may find the environment's state is lagging behind as
+ * it processes each received state in order.
  *
  * @author James MacGlashan.
  */
@@ -101,6 +105,44 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 		this.rosBridge.waitForConnection();
 
 		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this);
+		this.actionPub = new Publisher(rosActionTopic, "std_msgs/String", this.rosBridge);
+		this.actionSleepMS = actionSleepMS;
+
+
+	}
+
+	/**
+	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
+	 * needing to be published to ROS. State information
+	 * from ROS is expected to use be of
+	 * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
+	 * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+	 * BURLAP {@link burlap.oomdp.core.Domain}.
+	 * <br/>
+	 * When this environment has an action request (via {@link #executeAction(String, String[])}),
+	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
+	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
+	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
+	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+	 * method returns.
+	 * @param domain the domain into which ROS burlap_state messages are parsed
+	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
+	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
+	 * @param rosActionTopic the name of the ROS topic to which BURLAP actions are published (as strings)
+	 * @param actionSleepMS the amount of time that the {@link #executeAction(String, String[])} method stalls after publishing an action.
+	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
+	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
+	 */
+	public AsynchronousRosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosActionTopic,
+									  int actionSleepMS, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+
+		this.domain = domain;
+
+
+		this.rosBridge = RosBridge.createConnection(rosBridgeURI);
+		this.rosBridge.waitForConnection();
+
+		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this, rosBridgeThrottleRate, rosBridgeQueueLength);
 		this.actionPub = new Publisher(rosActionTopic, "std_msgs/String", this.rosBridge);
 		this.actionSleepMS = actionSleepMS;
 
