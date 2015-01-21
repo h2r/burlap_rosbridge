@@ -2,10 +2,7 @@ package burlap.ros;
 
 import burlap.debugtools.DPrint;
 import burlap.oomdp.auxiliary.common.NullTermination;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.core.TerminalFunction;
+import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
@@ -63,6 +60,8 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	protected RosBridge			rosBridge;
 	protected Publisher			actionPub;
 	protected int				actionSleepMS;
+
+	protected boolean			addHeader = false;
 
 	protected RewardFunction	rf = new NullRewardFunction();
 	protected TerminalFunction	tf = new NullTermination();
@@ -149,6 +148,52 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 
 	}
 
+	/**
+	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
+	 * needing to be published to ROS. Note that although you can specify a different message
+	 * type for the state and action using this constructor, the State message should adhere to the same
+	 * type in as the burlap_msgs/burlap_state (State information
+	 * from ROS is expected to use be of
+	 * type burlap_msgs/burlap_state (https://github.com/h2r/burlap_msgs) and the action topic message type
+	 * should either be a std/String, or a message adhering to the time stamped string burlap_msgs/timed_action
+	 * (https://github.com/h2r/burlap_msgs).
+	 * The burlap_state message is parsed into an actual BURLAP
+	 * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+	 * BURLAP {@link burlap.oomdp.core.Domain}.
+	 * <br/>
+	 * When this environment has an action request (via {@link #executeAction(String, String[])}),
+	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
+	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
+	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
+	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+	 * method returns.
+	 * @param domain the domain into which ROS burlap_state messages are parsed
+	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
+	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
+	 * @param rosActionTopic the name of the ROS topic to which BURLAP actions are published (as strings)
+	 * @param rosStateTopicMessageType the ROS message type used for states.
+	 * @param rosActionTopicMessageType the ROS message type used for actions.
+	 * @param actionSleepMS the amount of time that the {@link #executeAction(String, String[])} method stalls after publishing an action.
+	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
+	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
+	 */
+	public AsynchronousRosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosActionTopic,
+									  String rosStateTopicMessageType, String rosActionTopicMessageType,
+									  int actionSleepMS, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+
+		this.domain = domain;
+
+
+		this.rosBridge = RosBridge.createConnection(rosBridgeURI);
+		this.rosBridge.waitForConnection();
+
+		this.rosBridge.subscribe(rosStateTopic, rosStateTopicMessageType, this, rosBridgeThrottleRate, rosBridgeQueueLength);
+		this.actionPub = new Publisher(rosActionTopic, rosActionTopicMessageType, this.rosBridge);
+		this.actionSleepMS = actionSleepMS;
+
+
+	}
+
 
 	/**
 	 * Returns the {@link ros.RosBridge} object to which this environment is connected.
@@ -184,6 +229,19 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	public void setPrintStateAsReceived(boolean printStateAsReceived){
 		this.printStateAsReceived = printStateAsReceived;
 	}
+
+
+	/**
+	 * Specify whether a header object should be added to the action message. If yes, then the header will
+	 * be retrieved from the method {@link #getHeader()} (which you can override). By default, the returned
+	 * header is unpopulated, which will cause RosBridge to auto populate the sequence and time stamp (but leave
+	 * the frame as an empty string).
+	 * @param addHeader if true, then a header will be added to the action message; if false, no header is added.
+	 */
+	public void setAddHeader(boolean addHeader){
+		this.addHeader = addHeader;
+	}
+
 
 	/**
 	 * A method you can call that forces the calling thread to wait until the first state from ROS has been received.
@@ -245,8 +303,13 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 		GroundedAction ga = new GroundedAction(this.domain.getAction(aname), params);
 		String astr = ga.toString();
 
-		final Map<String, String> strData = new HashMap<String, String>();
+		final Map<String, Object> strData = new HashMap<String, Object>();
+		if(this.addHeader){
+			final Map<String, Object> header = this.getHeader();
+			strData.put("header", header);
+		}
 		strData.put("data", astr);
+
 		this.actionPub.publish(strData);
 
 		try {
@@ -273,12 +336,27 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	}
 
 
+	/**
+	 * Specifies the header data that will be added to an action message if this environment has been set to
+	 * add a header (by default headers are not added). Like all JSON messages, the header is represented as a map from the JSON field name
+	 * to its values. A populated ROS header message map should have entries for the field names seq, time, and
+	 * frame_id. By default, this method will return an empty Map, which will cause ROS Bridge to auto
+	 * populate the seq and time fields and set the frame_id to the string "". If you want to set some
+	 * of those values, override this method.
+	 *
+	 * @return a map specifying header field values.
+	 */
+	public Map<String, Object> getHeader(){
+		return new HashMap<String, Object>();
+	}
+
 
 	/**
 	 * Takes a JSON prepared data structure from a ROS message representation of a state and turns it into a BURLAP state object. The JSON
 	 * prepared version is a list of maps. Each map represents an object instance which stores the objects name ('name'), name
 	 * of the object's class ('object_class'), a list of values ('values'). Each value is a map specifying the attribute name
-	 * ('attribute') and its value in a string rep form ('value').
+	 * ('attribute') and its value in a string rep form ('value'). If the attribute is a MULTITARGETRELATIONAL type,
+	 * then it is assumed the different object names to which it is pointing are separated by a single ',' without spaces.
 	 * @param objects the list of OO-MDP object instances
 	 * @return and OO-MDP {@link State} object.
 	 */
@@ -295,7 +373,15 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 			for(Map<String, Object> v : values){
 				String aname = (String)v.get("attribute");
 				String vv = (String)v.get("value");
-				ob.setValue(aname, vv);
+				if(this.domain.getAttribute(aname).type != Attribute.AttributeType.MULTITARGETRELATIONAL) {
+					ob.setValue(aname, vv);
+				}
+				else{
+					String [] targets = vv.split(",");
+					for(String t : targets){
+						ob.addRelationalTarget(aname, t);
+					}
+				}
 			}
 
 			s.addObject(ob);
