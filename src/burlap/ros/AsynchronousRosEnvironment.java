@@ -7,11 +7,13 @@ import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
 import burlap.oomdp.singleagent.environment.Environment;
+import com.fasterxml.jackson.databind.JsonNode;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -258,7 +260,23 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 		DPrint.cl(this.debugCode, "State received");
 	}
 
+
 	@Override
+	public void receive(JsonNode data, String stringRep) {
+		JsonNode burlapObjects = data.get("msg").get("objects");
+		State s = this.JSONToState(burlapObjects);
+		this.curState = this.onStateReceive(s);
+
+		if(!this.receivedFirstState){
+			synchronized (this){
+				this.receivedFirstState = true;
+				this.notifyAll();
+			}
+		}
+
+	}
+
+	@Deprecated
 	public void receive(Map<String, Object> data, String stringRep) {
 
 		//get the message content
@@ -352,6 +370,50 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 
 
 	/**
+	 * Takes a {@link com.fasterxml.jackson.databind.JsonNode} that represents the BURLAP state and turns it into
+	 * a BURLAP {@link burlap.oomdp.core.State} object. The JSonNode at the top level is a list of objects.
+	 * Each object has a map with the fields "name", "object_class", and "values". The former are just string definitions.
+	 * The latter is another list of values. Each value has the fields "attribute" and "value". Attribute specified the name
+	 * of the BURLAP attribute; "value" specifies the string value of the value. If the attribute is a MULTITARGETRELATIONAL type,
+	 * then it is assumed the different object names to which it is pointing are separated by a single ',' without spaces.
+	 * @param objects a {@link com.fasterxml.jackson.databind.JsonNode} specifying the BURLAP state objects.
+	 * @return A BURLAP {@link burlap.oomdp.core.State} representation of the input JSON state.
+	 */
+	protected State JSONToState(JsonNode objects){
+		State s = new State();
+
+		Iterator<JsonNode> objIter = objects.elements();
+		while(objIter.hasNext()){
+			JsonNode obj = objIter.next();
+			String obName = obj.get("name").asText();
+			String className = obj.get("object_class").asText();
+			ObjectInstance ob = new ObjectInstance(this.domain.getObjectClass(className), obName);
+
+			JsonNode values = obj.get("values");
+			Iterator<JsonNode> valueIter = values.elements();
+			while(valueIter.hasNext()){
+				JsonNode v = valueIter.next();
+				String aname = v.get("attribute").asText();
+				String vv = v.get("value").asText();
+				if(this.domain.getAttribute(aname).type != Attribute.AttributeType.MULTITARGETRELATIONAL) {
+					ob.setValue(aname, vv);
+				}
+				else{
+					String [] targets = vv.split(",");
+					for(String t : targets){
+						ob.addRelationalTarget(aname, t);
+					}
+				}
+			}
+			s.addObject(ob);
+
+		}
+
+		return s;
+
+	}
+
+	/**
 	 * Takes a JSON prepared data structure from a ROS message representation of a state and turns it into a BURLAP state object. The JSON
 	 * prepared version is a list of maps. Each map represents an object instance which stores the objects name ('name'), name
 	 * of the object's class ('object_class'), a list of values ('values'). Each value is a map specifying the attribute name
@@ -360,6 +422,7 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * @param objects the list of OO-MDP object instances
 	 * @return and OO-MDP {@link State} object.
 	 */
+	@Deprecated
 	protected State JSONPreparedToState(List<Map<String, Object>> objects){
 
 		State s = new State();
