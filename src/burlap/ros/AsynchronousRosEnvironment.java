@@ -3,6 +3,8 @@ package burlap.ros;
 import burlap.debugtools.DPrint;
 import burlap.oomdp.auxiliary.common.NullTermination;
 import burlap.oomdp.core.*;
+import burlap.oomdp.core.objects.MutableObjectInstance;
+import burlap.oomdp.core.states.MutableState;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
@@ -380,14 +382,14 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * @return A BURLAP {@link burlap.oomdp.core.State} representation of the input JSON state.
 	 */
 	protected State JSONToState(JsonNode objects){
-		State s = new State();
+		State s = new MutableState();
 
 		Iterator<JsonNode> objIter = objects.elements();
 		while(objIter.hasNext()){
 			JsonNode obj = objIter.next();
 			String obName = obj.get("name").asText();
 			String className = obj.get("object_class").asText();
-			ObjectInstance ob = new ObjectInstance(this.domain.getObjectClass(className), obName);
+			ObjectInstance ob = new MutableObjectInstance(this.domain.getObjectClass(className), obName);
 
 			JsonNode values = obj.get("values");
 			Iterator<JsonNode> valueIter = values.elements();
@@ -425,12 +427,12 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	@Deprecated
 	protected State JSONPreparedToState(List<Map<String, Object>> objects){
 
-		State s = new State();
+		State s = new MutableState();
 
 		for(Map<String, Object> oMap : objects){
 			String obName = (String)oMap.get("name");
 			String className = (String)oMap.get("object_class");
-			ObjectInstance ob = new ObjectInstance(this.domain.getObjectClass(className), obName);
+			ObjectInstance ob = new MutableObjectInstance(this.domain.getObjectClass(className), obName);
 
 			List<Map<String, Object>> values = (List<Map<String, Object>>)oMap.get("values");
 			for(Map<String, Object> v : values){
