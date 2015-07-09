@@ -50,9 +50,22 @@ profit.
 
 ##Example code
 In the below code we assume that ROS is being run on the local host (port 9090 as default for ROS Bridge)
-and there is a ROS topic named `/burlap_state` that has a Grid World state message being published.
-Actions will be published to the topic `/burlap_action` and it is assumed some process on ROS is subscribe to that topic to actuate
-them. We allow 2 seconds for action execution. The behavior of the robot is controlled via a random policy.
+and there is a ROS topic named `/burlap_state` that has a Grid World state message being published. For testing purposes, you can have ROS publish a dummy burlap_state message in which the agent is located at position 1,2 with the following command:
+
+`rostopic pub /burlap_state burlap_msgs/burlap_state -r 1 -- '[{name: agent0, object_class: agent, values: [{attribute: x, value: "1"},{attribute: y, value: "2"}]}]'`
+
+This command will cause the burlap_state to be published at a rate of 1hz. Naturally, since it is required for this code, you need to be using the burlap_msgs ROS package for the message types. These are available on [github](https://github.com/h2r/burlap_msgs) and are installed into your ROS workspace in the usual way. To confirm that your ROS workspace knows about the burlap_msg types, use the command `rosmsg list | grep "burlap"` which should print out the entires for burlap_state, burlap_object, and burlap_value. If they are not present and you installed (and compiled with catkin_make) the messages, you may need to re-source your ROS workspace with the command `source pathToWorkspace/devel/setup.bash`. You can confirm that your burlap_state message is indeed being published at 1hz using the rostopic command 
+
+`rostopic echo /burlap_state`.
+
+Actions will be published to the topic `/burlap_action` and it is assumed that some process on ROS is subscribed to that topic to actuate
+them. In the example code, allow 2 seconds (2000 ms) for action execution. The behavior of the robot is controlled via a random policy. 
+
+After running the example code, you can verify that the actions are being published to ROS by the command 
+
+`rostopic echo burlap_action`, 
+
+which should be receving random "north," "south," "east," or "west" messages every 2 seconds.
 
 ```
 public static void main(String[] args) {
