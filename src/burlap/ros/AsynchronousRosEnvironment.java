@@ -4,11 +4,14 @@ import burlap.debugtools.DPrint;
 import burlap.oomdp.auxiliary.common.NullTermination;
 import burlap.oomdp.core.*;
 import burlap.oomdp.core.objects.MutableObjectInstance;
+import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.MutableState;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
 import burlap.oomdp.singleagent.environment.Environment;
+import burlap.oomdp.singleagent.environment.EnvironmentOutcome;
 import com.fasterxml.jackson.databind.JsonNode;
 import ros.Publisher;
 import ros.RosBridge;
@@ -26,17 +29,17 @@ import java.util.Map;
  * must be running. State information
  * from ROS is expected to use be of
  * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
- * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+ * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
  * BURLAP {@link burlap.oomdp.core.Domain}. This parsed state may be further modified before
- * the environment's current state is set to it by overriding the {@link #onStateReceive(burlap.oomdp.core.State)}
+ * the environment's current state is set to it by overriding the {@link #onStateReceive(burlap.oomdp.core.states.State)}
  * method, which receives the parsed state and returns a state object to which the environment's current
  * state will be updated.
  * <br/>
- * When this environment has an action request (via {@link #executeAction(String, String[])}),
+ * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
  * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
  * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
  * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
- * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+ * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
  * method returns. The fact that there is no "action completion" checking is why this is considered an asynchronous environment.
  * <br/>
  * After creating an environment, it may be a good idea to call the {@link #blockUntilStateReceived()} method
@@ -46,7 +49,7 @@ import java.util.Map;
  * A BURLAP reward function and terminal function can also be set
  * ({@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)} and
  * {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)}) so that the environment will returns meaningful messages
- * from the {@link #getLastReward()} and {@link #curStateIsTerminal()} methods.
+ * from the {@link #getLastReward()} and {@link #isInTerminalState()} methods.
  * <br/>
  * Note that the the environment's current state will be updated as frequently as ROSBridge provides
  * updates, but the states before and after actions returned are those from fixed time intervals set by the client
@@ -58,12 +61,14 @@ import java.util.Map;
  *
  * @author James MacGlashan.
  */
-public class AsynchronousRosEnvironment extends Environment implements RosListenDelegate{
+public class AsynchronousRosEnvironment implements Environment, RosListenDelegate{
 
 	protected Domain			domain;
 	protected RosBridge			rosBridge;
 	protected Publisher			actionPub;
 	protected int				actionSleepMS;
+
+	protected State				curState;
 
 	protected boolean			addHeader = false;
 
@@ -84,20 +89,20 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * needing to be published to ROS. State information
 	 * from ROS is expected to use be of
 	 * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
-	 * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(String, String[])}),
+	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
 	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
 	 * method returns.
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
 	 * @param rosActionTopic the name of the ROS topic to which BURLAP actions are published (as strings)
-	 * @param actionSleepMS the amount of time that the {@link #executeAction(String, String[])} method stalls after publishing an action.
+	 * @param actionSleepMS the amount of time that the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} method stalls after publishing an action.
 	 */
 	public AsynchronousRosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosActionTopic, int actionSleepMS){
 
@@ -119,20 +124,20 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * needing to be published to ROS. State information
 	 * from ROS is expected to use be of
 	 * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
-	 * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(String, String[])}),
+	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
 	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} )}
 	 * method returns.
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
 	 * @param rosActionTopic the name of the ROS topic to which BURLAP actions are published (as strings)
-	 * @param actionSleepMS the amount of time that the {@link #executeAction(String, String[])} method stalls after publishing an action.
+	 * @param actionSleepMS the amount of time that the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} method stalls after publishing an action.
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
@@ -162,14 +167,14 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * should either be a std/String, or a message adhering to the time stamped string burlap_msgs/timed_action
 	 * (https://github.com/h2r/burlap_msgs).
 	 * The burlap_state message is parsed into an actual BURLAP
-	 * {@link burlap.oomdp.core.State} object using the object classes defined in a provided
+	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(String, String[])}),
+	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
 	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(String, String[])}
+	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
 	 * method returns.
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
@@ -177,7 +182,7 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	 * @param rosActionTopic the name of the ROS topic to which BURLAP actions are published (as strings)
 	 * @param rosStateTopicMessageType the ROS message type used for states.
 	 * @param rosActionTopicMessageType the ROS message type used for actions.
-	 * @param actionSleepMS the amount of time that the {@link #executeAction(String, String[])} method stalls after publishing an action.
+	 * @param actionSleepMS the amount of time that the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} method stalls after publishing an action.
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
@@ -217,17 +222,34 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 	}
 
 	/**
-	 * Sets the BURLAP {@link burlap.oomdp.core.TerminalFunction} to use to provide terminal state checks from the {@link #curStateIsTerminal()}.
+	 * Sets the BURLAP {@link burlap.oomdp.core.TerminalFunction} to use to provide terminal state checks from the {@link #isInTerminalState()}.
 	 * @param tf the BURLAP {@link burlap.oomdp.core.TerminalFunction} to use to provide terminal state checks
 	 */
 	public void setTerminalFunction(TerminalFunction tf){
 		this.tf = tf;
 	}
 
+
+	@Override
+	public State getCurrentObservation() {
+		return this.curState.copy();
+	}
+
+
+	@Override
+	public boolean isInTerminalState() {
+		return this.tf.isTerminal(this.curState);
+	}
+
+	@Override
+	public void resetEnvironment() {
+		//do nothing...
+	}
+
 	/**
-	 * Sets whether the default implementation of {@link #onStateReceive(burlap.oomdp.core.State)} will print the
+	 * Sets whether the default implementation of {@link #onStateReceive(burlap.oomdp.core.states.State)} will print the
 	 * state information to the terminal.
-	 * @param printStateAsReceived if true, then the default implementation of {@link #onStateReceive(burlap.oomdp.core.State)} will print states to the screen;
+	 * @param printStateAsReceived if true, then the default implementation of {@link #onStateReceive(burlap.oomdp.core.states.State)} will print states to the screen;
 	 *                             if false, the state receiving is silent by default.
 	 */
 	public void setPrintStateAsReceived(boolean printStateAsReceived){
@@ -315,12 +337,12 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 		return s;
 	}
 
+
 	@Override
-	public State executeAction(String aname, String[] params) {
+	public EnvironmentOutcome executeAction(GroundedAction ga) {
 
 		State startState = this.curState;
 
-		GroundedAction ga = new GroundedAction(this.domain.getAction(aname), params);
 		String astr = ga.toString();
 
 		final Map<String, Object> strData = new HashMap<String, Object>();
@@ -342,18 +364,17 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 
 		this.lastReward = this.rf.reward(startState, ga, finalState);
 
-		return finalState;
+		EnvironmentOutcome eo = new EnvironmentOutcome(startState, ga, finalState, this.lastReward, this.tf.isTerminal(finalState));
+
+		return eo;
 	}
+
 
 	@Override
 	public double getLastReward() {
 		return this.lastReward;
 	}
 
-	@Override
-	public boolean curStateIsTerminal() {
-		return this.tf.isTerminal(this.curState);
-	}
 
 
 	/**
@@ -373,13 +394,13 @@ public class AsynchronousRosEnvironment extends Environment implements RosListen
 
 	/**
 	 * Takes a {@link com.fasterxml.jackson.databind.JsonNode} that represents the BURLAP state and turns it into
-	 * a BURLAP {@link burlap.oomdp.core.State} object. The JSonNode at the top level is a list of objects.
+	 * a BURLAP {@link burlap.oomdp.core.states.State} object. The JSonNode at the top level is a list of objects.
 	 * Each object has a map with the fields "name", "object_class", and "values". The former are just string definitions.
 	 * The latter is another list of values. Each value has the fields "attribute" and "value". Attribute specified the name
 	 * of the BURLAP attribute; "value" specifies the string value of the value. If the attribute is a MULTITARGETRELATIONAL type,
 	 * then it is assumed the different object names to which it is pointing are separated by a single ',' without spaces.
 	 * @param objects a {@link com.fasterxml.jackson.databind.JsonNode} specifying the BURLAP state objects.
-	 * @return A BURLAP {@link burlap.oomdp.core.State} representation of the input JSON state.
+	 * @return A BURLAP {@link burlap.oomdp.core.states.State} representation of the input JSON state.
 	 */
 	protected State JSONToState(JsonNode objects){
 		State s = new MutableState();
