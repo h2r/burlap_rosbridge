@@ -99,7 +99,7 @@ public class BurlapRosbridgeTest {
 		//optionally, uncomment the below so that you can see the received state printed to the terminal
 		//env.setPrintStateAsReceived(true);
 
-		//create a random policy for control that connects to the environment wrapped domain
+		//create a random policy for control
 		Policy randPolicy = new RandomPolicy(domain);
 
 		//begin behavior in the environment for 100 steps (200 seconds)
