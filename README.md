@@ -1,6 +1,8 @@
 burlap_rosbridge
 ================
 
+This branch (v1) is for connecting to ROS with BURLAP version 1. If you want to connect to ROS with BURLAP version 2, use the master branch.
+
 A BURLAP library extension for creating a ROS BURLAP Environment where the ROS connection is handled via ROS Bridge.
 Currently, only one class is provided: `AsynchronousRosEnvironment` (package `burlap.ros`), which is used for creating an Environment in which
 the current state is received over ROSBridge and actions are published to a ROS topic (as a `std_msgs/String.msg` ROS message) over Ros Bridge. This environment is
