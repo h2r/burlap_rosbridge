@@ -90,7 +90,7 @@ public static void main(String[] args) {
 	//env.setPrintStateAsReceived(true);
 
 	//create a random policy for control that connects to the environment wrapped domain
-	Policy randPolicy = new Policy.RandomPolicy(envDomain);
+	Policy randPolicy = new RandomPolicy(envDomain);
 	
 	//begin behavior in the environment for 100 steps (200 seconds)
 	randPolicy.evaluateBehavior(env, 100);
