@@ -1,6 +1,8 @@
 burlap_rosbridge
 ================
 
+Note that the master branch is now using the BURLAP 2 library. If you want ROS support for BURLAP version 1, use the v1 brnach.
+
 A BURLAP library extension for creating a ROS BURLAP Environment where the ROS connection is handled via ROS Bridge.
 Currently, only one class is provided: `AsynchronousRosEnvironment` (package `burlap.ros`), which is used for creating an Environment in which
 the current state is received over ROSBridge and actions are published to a ROS topic (as a `std_msgs/String.msg` ROS message) over Ros Bridge. This environment is
@@ -87,16 +89,11 @@ public static void main(String[] args) {
 	//optionally, uncomment the below so that you can see the received state printed to the terminal
 	//env.setPrintStateAsReceived(true);
 
-	//create a domain wrapper of the environment so that wrapped domain's actions go to
-	//to the environment, rather than the normal GridWorld action simulator code.
-	DomainEnvironmentWrapper envDomainWrapper = new DomainEnvironmentWrapper(domain, env);
-	final Domain envDomain = envDomainWrapper.generateDomain();
-
 	//create a random policy for control that connects to the environment wrapped domain
 	Policy randPolicy = new Policy.RandomPolicy(envDomain);
 	
-	//begin behavior for 100 steps (200 seconds)
-	randPolicy.evaluateBehavior(env.getCurState(), new NullRewardFunction(), 100);
+	//begin behavior in the environment for 100 steps (200 seconds)
+	randPolicy.evaluateBehavior(env, 100);
 
 }
 
