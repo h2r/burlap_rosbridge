@@ -16,7 +16,9 @@ import java.util.TimerTask;
  * returns immediately after starting its multiple publish calls in a separate thread.
  * <br/><br/>
  * Note that by default, the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method will return a delay time
- * of zero. However, you can change this value with the {@link #setDelayTime(int)} method.
+ * of zero. However, you can change this value with the {@link #setDelayTime(int)} method. This is often useful if you
+ * are setting a synchronous action publish and expect the final repeated publish to result in execution that takes
+ * some length of time to complete in the real world.
  * @author James MacGlashan.
  */
 public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublisher {
@@ -70,6 +72,26 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 
 	/**
 	 * Initializes
+	 * @param topic the ROS topic to publish to
+	 * @param msgType the ROS message type of the ROS topic
+	 * @param rosBridge the {@link ros.RosBridge} connection
+	 * @param msg the constant ROS message that will always be published
+	 * @param period the time delay between subsequent publishes to ros
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)}
+	 * @param synchronous if true, {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param delayTime the time to delay returned by {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)}.
+	 */
+	public RepeatingActionPublisher(String topic, String msgType, RosBridge rosBridge, Object msg, int period, int n, boolean synchronous, int delayTime) {
+		super(topic, msgType, rosBridge);
+		this.msg = msg;
+		this.period = period;
+		this.n = n;
+		this.synchronous = synchronous;
+		this.delayTime = delayTime;
+	}
+
+	/**
+	 * Initializes
 	 * @param pub the {@link ros.Publisher} used to publish action messages.
 	 * @param msg the constant ROS message that will always be published
 	 * @param period the  time delay between subsequent publishes to ros
@@ -82,6 +104,24 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 		this.period = period;
 		this.n = n;
 		this.synchronous = synchronous;
+	}
+
+	/**
+	 * Initializes
+	 * @param pub the {@link ros.Publisher} used to publish action messages.
+	 * @param msg the constant ROS message that will always be published
+	 * @param period the  time delay between subsequent publishes to ros
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)}
+	 * @param synchronous if true, {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param delayTime the time to delay returned by {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)}.
+	 */
+	public RepeatingActionPublisher(Publisher pub, Object msg, int period, int n, boolean synchronous, int delayTime) {
+		super(pub);
+		this.msg = msg;
+		this.period = period;
+		this.n = n;
+		this.synchronous = synchronous;
+		this.delayTime = delayTime;
 	}
 
 	public Object getMsg() {
@@ -142,7 +182,7 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 			synchronized(pt) {
 				while(!pt.finished()) {
 					try {
-						this.wait();
+						pt.wait();
 					} catch(InterruptedException e) {
 						e.printStackTrace();
 					}
