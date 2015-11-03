@@ -2,76 +2,79 @@ package burlap.ros;
 
 import burlap.debugtools.DPrint;
 import burlap.oomdp.auxiliary.common.NullTermination;
-import burlap.oomdp.core.Attribute;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.objects.MutableObjectInstance;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.MutableState;
 import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
-import burlap.oomdp.singleagent.environment.Environment;
-import burlap.oomdp.singleagent.environment.EnvironmentOutcome;
-import burlap.ros.actionpub.ActionPublisher;
+import burlap.oomdp.stateserialization.simple.SimpleSerializableState;
 import com.fasterxml.jackson.databind.JsonNode;
-import ros.RosBridge;
+import ros.MessageUnpacker;
 import ros.RosListenDelegate;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 /**
- * An {@link burlap.oomdp.singleagent.environment.Environment} in which state information is provided by ROS over ROS Bridge using
- * burlap_msgs/burlap_state message types. Actions are executed by specifying {@link burlap.ros.actionpub.ActionPublisher} instances
- * to handle the ROS communication for each given BURLAP {@link burlap.oomdp.singleagent.Action} (identified by the action's name).
- * The {@link burlap.ros.actionpub.ActionPublisher} objects are specified after this object is constructed using any of the following methods:
- * {@link #setActionPublisher(burlap.oomdp.singleagent.Action, burlap.ros.actionpub.ActionPublisher)},
- * {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}
- * {@link #setActionPublisherForMultipleAcitons(java.util.List, burlap.ros.actionpub.ActionPublisher)}, or
- * {@link #setActionPublisherForMultipleAcitonNames(java.util.List, burlap.ros.actionpub.ActionPublisher)}.
- * <br/><br/>
- * Before interacting with this environment, you should call the {@link #blockUntilStateReceived()} method to make sure it has received a state from ROS.
- * <br/><br/>
- * In the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} method, first an associated {@link burlap.ros.actionpub.ActionPublisher} for the
- * provided {@link burlap.oomdp.singleagent.GroundedAction} is found. Then it calls the {@link burlap.ros.actionpub.ActionPublisher#publishAction(burlap.oomdp.singleagent.GroundedAction)}
- * method on it. When that method returns, the thread sleeps for the time delay returned by the method if the value is greater than 0. The resulting
- * action is set to whatever the latest burlap_msgs/burlap_state message received from ROS is and then the corresponding {@link burlap.oomdp.singleagent.environment.EnvironmentOutcome}
- * for the interaction is returned. The reward for the interaction is determined by a provided {@link burlap.oomdp.singleagent.RewardFunction} that by default is set to a
- * {@link burlap.oomdp.singleagent.common.NullRewardFunction} that always returns zero. The termination flag is set by querying this environment's
- * {@link #isInTerminalState()}, which queries a provided {@link burlap.oomdp.core.TerminalFunction} on the current environment state that by default is a
- * {@link burlap.oomdp.auxiliary.common.NullTermination} (always returns false).
+ * An implementation of {@link burlap.ros.AbstractRosEnvironment} that maintains the environment state by receiving burlap_msgs/burlap_state
+ * ROS messages over ROSBridge.
  * <br/><br/>
  * Note that in the constructor you may want to set a low (e.g., 1) throttle rate and queue rate if burlap_msgs/burlap_state messages
  * are sent frequently, otherwise ROS Bridge may start lagging.
  * <br/><br/>
- * If you would like, you can override waiting for the first state message received from ROS and force this environment to report
+ * This class will block on the {@link #getCurrentObservation()} method until it receives a state message from
+ * ROS Bridge. If you would like, you can override waiting for the first state message received from ROS and force this environment to report
  * a specific BURLAP {@link burlap.oomdp.core.states.State} using the {@link #overrideFirstReceivedState(burlap.oomdp.core.states.State)} method. Note
  * that any subsequent burlap_msgs/burlap_state messages will still update this environment's current state.
+ * <br/><br/>
+ * This class may also be provided a BURLAP {@link burlap.oomdp.singleagent.RewardFunction} and {@link burlap.oomdp.core.TerminalFunction}
+ * for generating non-zero rewards and terminal states. Use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
+ * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} to set them use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
+ * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} methods.
+ * <br/><br/>
+ * If you would like to augment or further process the BURLAP {@link burlap.oomdp.core.states.State} that is parsed
+ * from the ROS message, you can intercept it by overriding the {@link #onStateReceive(burlap.oomdp.core.states.State)}
+ * method, and returning a different processed {@link burlap.oomdp.core.states.State}.
  * @author James MacGlashan.
  */
-public class RosEnvironment implements Environment, RosListenDelegate{
+public class RosEnvironment extends AbstractRosEnvironment implements RosListenDelegate{
 
+
+	/**
+	 * The BURLAP {@link burlap.oomdp.core.Domain} into which states will be parsed
+	 */
 	protected Domain domain;
-	protected RosBridge rosBridge;
-	protected Map<String, ActionPublisher> actionPublishers = new HashMap<String, ActionPublisher>();
 
+	/**
+	 * The current {@link burlap.oomdp.core.states.State} representation of the environment
+	 */
 	protected State curState;
 
+	/**
+	 * The optional {@link burlap.oomdp.singleagent.RewardFunction} used to generate reward signals
+	 */
 	protected RewardFunction rf = new NullRewardFunction();
+
+	/**
+	 * The optional {@link burlap.oomdp.core.TerminalFunction} used to specify terminal states of the environment
+	 */
 	protected TerminalFunction tf = new NullTermination();
 
-	protected double			lastReward = 0.;
 
-	protected Boolean			receivedFirstState = false;
+	/**
+	 * Indicates whether the first state message from ROS has been received yet
+	 */
+	protected Boolean receivedFirstState = false;
 
-	protected boolean			printStateAsReceived = false;
 
-	protected int				debugCode = 7345252;
+	/**
+	 * Debug flag indicating whether states should be printed to the terminal as they are received. Default value is false.
+	 */
+	protected boolean printStateAsReceived = false;
+
+
+	/**
+	 * The debug code used for debug prints.
+	 */
+	protected int debugCode = 7345252;
 
 
 
@@ -84,24 +87,15 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
-	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
-	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
-	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
-	 * method returns.
+	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
+	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
 	 */
 	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic){
-
+		super(rosBridgeURI);
 		this.domain = domain;
-
-
-		this.rosBridge = RosBridge.createConnection(rosBridgeURI);
-		this.rosBridge.waitForConnection();
-
 		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this);
 
 
@@ -116,12 +110,8 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
-	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
-	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
-	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} )}
-	 * method returns.
+	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
+	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
@@ -129,105 +119,36 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
 	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, int rosBridgeThrottleRate, int rosBridgeQueueLength){
-
+		super(rosBridgeURI);
 		this.domain = domain;
-
-
-		this.rosBridge = RosBridge.createConnection(rosBridgeURI);
-		this.rosBridge.waitForConnection();
-
 		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this, rosBridgeThrottleRate, rosBridgeQueueLength);
 
 	}
 
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
-	 * needing to be published to ROS. Note that although you can specify a different message
-	 * type for the state and action using this constructor, the State message should adhere to the same
-	 * type in as the burlap_msgs/burlap_state (State information
-	 * from ROS is expected to use be of
-	 * type burlap_msgs/burlap_state (https://github.com/h2r/burlap_msgs) and the action topic message type
-	 * should either be a std/String, or a message adhering to the time stamped string burlap_msgs/timed_action
-	 * (https://github.com/h2r/burlap_msgs).
-	 * The burlap_state message is parsed into an actual BURLAP
-	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
-	 * BURLAP {@link burlap.oomdp.core.Domain}.
+	 * needing to be published to ROS. This constructor allows you to specify
+	 * the message type of the state topic if for some reason if the message type is not named
+	 * the standard "burlap_msgs/burlap_state". However, this class will operate under the assumption
+	 * that the message type adheres to the burlap_msgs/burlap_state structure. If it does not,
+	 * then you will need to override the {@link #receive(com.fasterxml.jackson.databind.JsonNode, String)}
+	 * method for parsing the BURLAP {@link burlap.oomdp.core.states.State} object out of the ROS message.
 	 * <br/>
-	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
-	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
-	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
-	 * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
-	 * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
-	 * method returns.
+	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
+	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
+	 *
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
-	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
-	 * @param rosStateTopicMessageType the ROS message type used for states.
+	 * @param rosStateTopic the name of the ROS topic that publishes the state messages.
+	 * @param rosStateMessageType the message type of the ROS state messages.
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
-	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic,
-									  String rosStateTopicMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
-
+	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+		super(rosBridgeURI);
 		this.domain = domain;
+		this.rosBridge.subscribe(rosStateTopic, rosStateMessageType, this, rosBridgeThrottleRate, rosBridgeQueueLength);
 
-
-		this.rosBridge = RosBridge.createConnection(rosBridgeURI);
-		this.rosBridge.waitForConnection();
-
-		this.rosBridge.subscribe(rosStateTopic, rosStateTopicMessageType, this, rosBridgeThrottleRate, rosBridgeQueueLength);
-
-	}
-
-
-	/**
-	 * Sets the {@link burlap.ros.actionpub.ActionPublisher} to handle executions of actions with the name actionName
-	 * @param actionName the name of the action
-	 * @param ap the {@link burlap.ros.actionpub.ActionPublisher} that handles executions of actions with that name
-	 */
-	public void setActionPublisher(String actionName, ActionPublisher ap){
-		this.actionPublishers.put(actionName, ap);
-	}
-
-	/**
-	 * Sets the {@link burlap.ros.actionpub.ActionPublisher} to handle executions of the given {@link burlap.oomdp.singleagent.Action}
-	 * @param action the {@link burlap.oomdp.singleagent.Action} to handle
-	 * @param ap the {@link burlap.ros.actionpub.ActionPublisher} to handle the executions
-	 */
-	public void setActionPublisher(Action action, ActionPublisher ap){
-		this.actionPublishers.put(action.getName(), ap);
-	}
-
-
-	/**
-	 * Sets a single {@link burlap.ros.actionpub.ActionPublisher} to handle the execution of a list of {@link burlap.oomdp.singleagent.Action} objects.
-	 * @param actions the {@link burlap.oomdp.singleagent.Action} objects to handle
-	 * @param ap the {@link burlap.ros.actionpub.ActionPublisher} that handles the execution
-	 */
-	public void setActionPublisherForMultipleAcitons(List<Action> actions, ActionPublisher ap){
-		for(Action a : actions){
-			this.setActionPublisher(a, ap);
-		}
-	}
-
-
-	/**
-	 * Sets a single {@link burlap.ros.actionpub.ActionPublisher} to handle the execution of a list of actions identified by given action names.
-	 * @param actionNames the list of action names to handle
-	 * @param ap the {@link burlap.ros.actionpub.ActionPublisher} that handles execution
-	 */
-	public void setActionPublisherForMultipleAcitonNames(List<String> actionNames, ActionPublisher ap){
-		for(String a : actionNames){
-			this.setActionPublisher(a, ap);
-		}
-	}
-
-	/**
-	 * Returns the {@link ros.RosBridge} object to which this environment is connected.
-	 * @return the {@link ros.RosBridge} object to which this environment is connected.
-	 */
-	public RosBridge getRosBridge(){
-		return this.rosBridge;
 	}
 
 
@@ -249,6 +170,7 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 
 	@Override
 	public State getCurrentObservation() {
+		this.blockUntilStateReceived();
 		return this.curState.copy();
 	}
 
@@ -258,43 +180,10 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 		return this.tf.isTerminal(this.curState);
 	}
 
-	@Override
-	public void resetEnvironment() {
-		//do nothing...
-	}
-
 
 	@Override
-	public EnvironmentOutcome executeAction(GroundedAction ga) {
-
-		State startState = this.curState;
-
-		ActionPublisher ap = this.actionPublishers.get(ga.actionName());
-		if(ap == null){
-			throw new RuntimeException("ROSEnvironment has no ActionPublisher available to handle action " + ga.toString());
-		}
-
-		int delay = ap.publishAction(ga);
-		if(delay > 0){
-			try {
-				Thread.sleep(delay);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		State finalState = this.curState.copy();
-
-		this.lastReward = this.rf.reward(startState, ga, finalState);
-
-		EnvironmentOutcome eo = new EnvironmentOutcome(startState, ga, finalState, this.lastReward, this.isInTerminalState());
-
-		return eo;
-	}
-
-	@Override
-	public double getLastReward() {
-		return this.lastReward;
+	protected double getMostRecentRewardSignal(State s, GroundedAction ga, State sprime) {
+		return this.rf.reward(s, ga, sprime);
 	}
 
 	/**
@@ -340,8 +229,10 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 
 	@Override
 	public void receive(JsonNode data, String stringRep) {
-		JsonNode burlapObjects = data.get("msg").get("objects");
-		State s = this.JSONToState(burlapObjects);
+
+		MessageUnpacker <SimpleSerializableState> unpacker = new MessageUnpacker(SimpleSerializableState.class);
+		SimpleSerializableState sss = unpacker.unpackRosMessage(data);
+		State s = sss.deserialize(this.domain);
 		this.curState = this.onStateReceive(s);
 
 		if(!this.receivedFirstState){
@@ -369,49 +260,6 @@ public class RosEnvironment implements Environment, RosListenDelegate{
 		return s;
 	}
 
-	/**
-	 * Takes a {@link com.fasterxml.jackson.databind.JsonNode} that represents the BURLAP state and turns it into
-	 * a BURLAP {@link burlap.oomdp.core.states.State} object. The JSonNode at the top level is a list of objects.
-	 * Each object has a map with the fields "name", "object_class", and "values". The former are just string definitions.
-	 * The latter is another list of values. Each value has the fields "attribute" and "value". Attribute specified the name
-	 * of the BURLAP attribute; "value" specifies the string value of the value. If the attribute is a MULTITARGETRELATIONAL type,
-	 * then it is assumed the different object names to which it is pointing are separated by a single ',' without spaces.
-	 * @param objects a {@link com.fasterxml.jackson.databind.JsonNode} specifying the BURLAP state objects.
-	 * @return A BURLAP {@link burlap.oomdp.core.states.State} representation of the input JSON state.
-	 */
-	protected State JSONToState(JsonNode objects){
-		State s = new MutableState();
-
-		Iterator<JsonNode> objIter = objects.elements();
-		while(objIter.hasNext()){
-			JsonNode obj = objIter.next();
-			String obName = obj.get("name").asText();
-			String className = obj.get("object_class").asText();
-			ObjectInstance ob = new MutableObjectInstance(this.domain.getObjectClass(className), obName);
-
-			JsonNode values = obj.get("values");
-			Iterator<JsonNode> valueIter = values.elements();
-			while(valueIter.hasNext()){
-				JsonNode v = valueIter.next();
-				String aname = v.get("attribute").asText();
-				String vv = v.get("value").asText();
-				if(this.domain.getAttribute(aname).type != Attribute.AttributeType.MULTITARGETRELATIONAL) {
-					ob.setValue(aname, vv);
-				}
-				else{
-					String [] targets = vv.split(",");
-					for(String t : targets){
-						ob.addRelationalTarget(aname, t);
-					}
-				}
-			}
-			s.addObject(ob);
-
-		}
-
-		return s;
-
-	}
 
 
 }

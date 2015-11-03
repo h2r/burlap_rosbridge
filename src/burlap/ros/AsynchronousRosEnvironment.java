@@ -23,7 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
+ * NOTE: This class is now deprecated! You should use the more general {@link burlap.ros.RosEnvironment}
+ * or subclass the {@link burlap.ros.AbstractRosEnvironment} instead. If you want actions to
+ * send their message as a string of their name, set the {@link burlap.ros.actionpub.ActionPublisher}
+ * for all actions to a {@link burlap.ros.actionpub.ActionStringPublisher}.
+ * <br/><br/>
  * An environment wrapper for state information provided over ROS with BURLAP actions
  * that are published to ROS. This environment connects to ROS using ROSBridge, which
  * must be running. State information
@@ -61,6 +65,7 @@ import java.util.Map;
  *
  * @author James MacGlashan.
  */
+@Deprecated
 public class AsynchronousRosEnvironment implements Environment, RosListenDelegate{
 
 	protected Domain			domain;
