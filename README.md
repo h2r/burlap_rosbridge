@@ -97,5 +97,72 @@ In this code, we have action execution for all actions handled by a single `Acti
 which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random GridWorld policy running, so you should see a random assorment of "north," "south," "east," and "west."
 
 ###Example 2
+In the last example we setup an environment that published actions as string representations of the action name. This approach is only effective if you have some ROS code running that knows how to interpret the string representations
+and actuate it on the robot, thereby requiring a middle man. A more direct way to control the robot is to have
+action execution publish more typical ROS messages that specify the actuation. For example, on turtlebot robots, and various other robots, it is common to publish a ROS Twist message over a period of time to have the robot move. In this example code, we setup the BURLAP environment so that action execution results in publishing a Twist message for a fixed duration, thereby directly controlling the robot without a middle-man ROS script. We also then use a `TerminalExplorer` over the Environment we created so that you can manually control the robot through the terminal to test it out. 
+
+```
+public static void main(String [] args){
+
+	//create a new domain with no state representation
+	Domain domain = new SADomain();
+
+	//create action specification (we don't need to define transition dynamics since we won't be doing any planning)
+	new NullAction("forward", domain); //forward
+	new NullAction("backward", domain); //backward
+	new NullAction("rotate", domain); //clockwise rotate
+	new NullAction("rotate_ccw", domain); //counter-clockwise rotate
 
 
+	//setup ROS information
+	String uri = "ws://localhost:9090";
+	String stateTopic = "/burlap_state"; //we won't need this in this example, so set it to anything
+	String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
+	String actionMsg = "geometry_msgs/Twist";
+
+
+	//define the relevant twist messages that we'll use for our actions
+	Twist fTwist = new Twist(new Vector3(0.1,0,0.), new Vector3()); //forward
+	Twist bTwist = new Twist(new Vector3(-0.1,0,0.), new Vector3()); //backward
+	Twist rTwist = new Twist(new Vector3(), new Vector3(0,0,-0.5)); //clockwise rotate
+	Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
+
+	//create environment
+	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
+
+	boolean sync = true; //use synchronized action execution
+	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, 300, 5, sync, 300));
+	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, 300, 5, sync, 300));
+	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, 300, 5, sync, 300));
+	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, 300, 5, sync, 300));
+
+	//force the environment state to a null state so we don't have to setup a burlap_state topic on ROS
+	env.overrideFirstReceivedState(new MutableState());
+
+
+	//create a terminal controlled explorer to run on our environment
+	//so that we can control the robot with the keyboard
+	TerminalExplorer exp = new TerminalExplorer(domain, env);
+
+	//add some alias for the action names so that we don't have to write the full action name out
+	exp.addActionShortHand("d", "rotate");
+	exp.addActionShortHand("a", "rotate_ccw");
+	exp.addActionShortHand("w", "forward");
+	exp.addActionShortHand("s", "backward");
+	exp.addActionShortHand("x", "stop");
+
+	exp.explore();
+
+}
+```
+The first thing to note about this example code is that we are not using GridWorld. For this example, we don't care to maintain any state since we simply want to show you how to use the code to directly control a robot with Twist messages. Therefore, we create an empty BURLAP `Domain` with some `Action` objects for a forward, backward, and rotate actions (we use the `NullAction` since we are ony going to execute actions through the `RosEnvironment` and therefore don't need to define any transition dynamics).
+
+Next we create Twist objects that are part of the java_rosbridge library we are using. These objects are Java Beans that follow the same structure as the ROS Twist message: a linear `Vector3` component and an angular `Vector3` component. Note that if you were writing code for a different kind of robot that didn't respond to Twist messages and used a message type not in java_rosbridge, you could simply create your own Java Bean class for it and use it just as well.
+
+For the ROS environment we have to provide standard information about the ROS Bridge URI and the state topic. We won't actually be using the state topic in this example, so we could give it any name.
+
+After creating our `RosEnvironment` we set up a `ActionPublisher` for each of our BURLAP actions. Specifically, we use a `RepeatingActionPublisher`. A `RepeatingActionPublisher` will have the affect of publishing a specified message a fixed number of times at a specified period. Specifically, for each BURLAP action, we define a `RepeatingActionPublisher` that will publish the corresponding Twist message 5 times with period of 300 milliseconds between each publish. We also have to specify the action topic for this message. We set it to the topic commonly used by the Turtlebot robot, but you should be sure set it to whichever topic your Twist-controlled robot will respond. Note that we set a synchronized flag for the  `RepeatingActionPublisher` publisher to true. This has the effect of the `ActionPublisher` blocking until it has published all 5 messages before returning control to the calling `Environment`. We also specify a returned delay of 300 milliseconds, which will cause the `RosEnvironment` to wait an additional 300 millseconds after the `ActionPublisher` has returned to give time for the final publish message to finish actuating.
+
+Normally when interacting with a `RosEnvironment` not observations or actions will be permitted until it receives from ROS a State messages. In this example, however, we are not going to write any state generation code, so no message will ever arrive. Therefore, we use the `env.overrideFirstReceivedState(new MutableState());` to force the Environment to think the current state is the one provided (an empty `State`) so that we can continue without waiting for a message that will never come.
+
+Finally, we use the standard BURLAP `TerminalExplorer` to allow us to manually interact with the `Environment` with keyboard commands. We also give some action name alias of w,a,s, and d so that we can simply type that key (and press enter) to have it execute a forward, rotate, or backward action. If you run the code, you should find that when you enter the keyboard commands it causes the robot to move.
