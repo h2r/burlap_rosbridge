@@ -16,9 +16,8 @@ import java.util.TimerTask;
  * returns immediately after starting its multiple publish calls in a separate thread.
  * <br/><br/>
  * Note that by default, the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method will return a delay time
- * of zero. However, you can change this value with the {@link #setDelayTime(int)} method. This is often useful if you
- * are setting a synchronous action publish and expect the final repeated publish to result in execution that takes
- * some length of time to complete in the real world.
+ * of zero if set to asynchronous, or the period is set to synchronous.
+ * However, you can change this value with the {@link #setDelayTime(int)} method or by using the more complete constructor.
  * @author James MacGlashan.
  */
 public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublisher {
@@ -53,7 +52,8 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 
 
 	/**
-	 * Initializes
+	 * Initializes. If synchronous is set to true, the returned delay time by {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} will
+	 * be set to the same as the period.
 	 * @param topic the ROS topic to publish to
 	 * @param msgType the ROS message type of the ROS topic
 	 * @param rosBridge the {@link ros.RosBridge} connection
@@ -68,6 +68,9 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 		this.period = period;
 		this.n = n;
 		this.synchronous = synchronous;
+		if(synchronous){
+			this.delayTime = period;
+		}
 	}
 
 	/**
