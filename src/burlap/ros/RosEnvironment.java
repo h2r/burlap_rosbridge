@@ -215,7 +215,10 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	 * A method you can call that forces the calling thread to wait until the first state from ROS has been received.
 	 */
 	public synchronized void blockUntilStateReceived(){
-		DPrint.cl(this.debugCode, "Blocking until state received.");
+		if(!this.receivedFirstState) {
+			DPrint.cl(this.debugCode, "Blocking until state received.");
+		}
+		boolean oldReceived = this.receivedFirstState;
 		while(!this.receivedFirstState){
 			try {
 				this.wait();
@@ -223,7 +226,10 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 				e.printStackTrace();
 			}
 		}
-		DPrint.cl(this.debugCode, "State received");
+		if(!oldReceived) {
+			DPrint.cl(this.debugCode, "State received");
+		}
+
 	}
 
 
