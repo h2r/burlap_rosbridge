@@ -54,27 +54,27 @@ We provide two sets of example code. One is more straightforward for testing pur
 public static void main(String[] args) {
 
 	//define the grid world
-		GridWorldDomain gwd = new GridWorldDomain(11, 11);
-		gwd.makeEmptyMap();
-		final Domain domain = gwd.generateDomain();
+	GridWorldDomain gwd = new GridWorldDomain(11, 11);
+	gwd.makeEmptyMap();
+	final Domain domain = gwd.generateDomain();
 
-		//setup ROS information
-		String uri = "ws://localhost:9090";
-		String stateTopic = "/burlap_state";
-		String actionTopic = "/burlap_action";
+	//setup ROS information
+	String uri = "ws://localhost:9090";
+	String stateTopic = "/burlap_state";
+	String actionTopic = "/burlap_action";
 
 
-		RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
-		env.setActionPublisherForMultipleAcitons(domain.getActions(), new ActionStringPublisher(actionTopic, env.getRosBridge(), 500));
+	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
+	env.setActionPublisherForMultipleAcitons(domain.getActions(), new ActionStringPublisher(actionTopic, env.getRosBridge(), 500));
 
-		//optionally, uncomment the below so that you can see the received state printed to the terminal
-		//env.setPrintStateAsReceived(true);
+	//optionally, uncomment the below so that you can see the received state printed to the terminal
+	//env.setPrintStateAsReceived(true);
 
-		//create a random policy for control that connects to the environment wrapped domain
-		Policy randPolicy = new RandomPolicy(domain);
+	//create a random policy for control that connects to the environment wrapped domain
+	Policy randPolicy = new RandomPolicy(domain);
 
-		//begin behavior in the environment for 100 steps (50 seconds)
-		randPolicy.evaluateBehavior(env, 100);
+	//begin behavior in the environment for 100 steps (50 seconds)
+	randPolicy.evaluateBehavior(env, 100);
 
 }
 
