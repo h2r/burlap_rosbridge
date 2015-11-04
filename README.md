@@ -131,10 +131,11 @@ public static void main(String [] args){
 	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
 
 	boolean sync = true; //use synchronized action execution
-	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, 300, 5, sync, 300));
-	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, 300, 5, sync, 300));
-	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, 300, 5, sync, 300));
-	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, 300, 5, sync, 300));
+	int period = 500;
+	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, period, 5, sync, period));
+	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, period, 5, sync, period));
+	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, period, 5, sync, period));
+	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, period, 5, sync, period));
 
 	//force the environment state to a null state so we don't have to setup a burlap_state topic on ROS
 	env.overrideFirstReceivedState(new MutableState());
@@ -161,7 +162,7 @@ Next we create Twist objects that are part of the [java_rosbridge](https://githu
 
 For the ROS environment we have to provide standard information about the ROS Bridge URI and the state topic. We won't actually be using the state topic in this example, so we could give it any name.
 
-After creating our `RosEnvironment` we set up a `ActionPublisher` for each of our BURLAP actions. Specifically, we use a `RepeatingActionPublisher`. A `RepeatingActionPublisher` will have the affect of publishing a specified message a fixed number of times at a specified period. Specifically, for each BURLAP action, we define a `RepeatingActionPublisher` that will publish the corresponding Twist message 5 times with a period of 300 milliseconds between each publish. We also have to specify the action topic for this message. We set it to the topic commonly used by the Turtlebot robot, but you should be sure set it to whichever topic your Twist-controlled robot will respond. Note that we set a synchronized flag for the  `RepeatingActionPublisher` publisher to true. This has the effect of the `ActionPublisher` blocking until it has published all 5 messages before returning control to the calling `Environment`. We also specify a returned delay of 300 milliseconds, which will cause the `RosEnvironment` to wait an additional 300 millseconds after the `RepeatingActionPublisher` published its final 5th message thereby allowing time for that final message to have an affect.
+After creating our `RosEnvironment` we set up a `ActionPublisher` for each of our BURLAP actions. Specifically, we use a `RepeatingActionPublisher`. A `RepeatingActionPublisher` will have the affect of publishing a specified message a fixed number of times at a specified period. Specifically, for each BURLAP action, we define a `RepeatingActionPublisher` that will publish the corresponding Twist message 5 times with a period of 500 milliseconds between each publish. We also have to specify the action topic for this message. We set it to the topic commonly used by the Turtlebot robot, but you should be sure set it to whichever topic your Twist-controlled robot will respond. Note that we set a synchronized flag for the  `RepeatingActionPublisher` publisher to true. This has the effect of the `ActionPublisher` blocking until it has published all 5 messages before returning control to the calling `Environment`. We also specify a returned delay of another 500 milliseconds, which will cause the `RosEnvironment` to wait an additional 300 millseconds after the `RepeatingActionPublisher` published its final 5th message thereby allowing time for that final message to have an affect.
 
 Normally when interacting with a `RosEnvironment` no observations or actions will be permitted until it receives from ROS the first State message (indicating the initial state of the environment). In this example, however, we are not going to write any state generation code, so no message will ever arrive. Therefore, we use the `env.overrideFirstReceivedState(new MutableState())` call to force the Environment to think the current state is the one provided (an empty `State`) so that we can continue without waiting for a message that will never come.
 
