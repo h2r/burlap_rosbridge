@@ -130,12 +130,13 @@ public static void main(String [] args){
 	//create environment
 	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
 
-	boolean sync = true; //use synchronized action execution
-	int period = 500;
-	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, period, 5, sync, period));
-	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, period, 5, sync, period));
-	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, period, 5, sync, period));
-	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, period, 5, sync, period));
+	int period = 500; //publish every 500 milliseconds...
+	int nPublishes = 5; //...for 5 times for each action execution...
+	boolean sync = true; //...and use synchronized action execution
+	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, period, nPublishes, sync));
+	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, period, nPublishes, sync));
+	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, period, nPublishes, sync));
+	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, period, nPublishes, sync));
 
 	//force the environment state to a null state so we don't have to setup a burlap_state topic on ROS
 	env.overrideFirstReceivedState(new MutableState());
