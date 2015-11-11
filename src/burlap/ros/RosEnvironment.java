@@ -28,7 +28,9 @@ import ros.RosListenDelegate;
  * This class may also be provided a BURLAP {@link burlap.oomdp.singleagent.RewardFunction} and {@link burlap.oomdp.core.TerminalFunction}
  * for generating non-zero rewards and terminal states. Use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
  * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} to set them use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
- * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} methods.
+ * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} methods. This class does not have the {@link #handleEnterTerminalState()}
+ * inherited from {@link burlap.ros.AbstractRosEnvironment} do anything, so if you want to inject code for handling the event
+ * when the environment enters a terminal state, you should subclass this class and override that method.
  * <br/><br/>
  * If you would like to augment or further process the BURLAP {@link burlap.oomdp.core.states.State} that is parsed
  * from the ROS message, you can intercept it by overriding the {@link #onStateReceive(burlap.oomdp.core.states.State)}
@@ -266,6 +268,8 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 		return s;
 	}
 
-
-
+	@Override
+	protected void handleEnterTerminalState() {
+		//do nothing
+	}
 }
