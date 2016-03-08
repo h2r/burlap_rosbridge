@@ -168,3 +168,18 @@ After creating our `RosEnvironment` we set up a `ActionPublisher` for each of ou
 Normally when interacting with a `RosEnvironment` no observations or actions will be permitted until it receives from ROS the first State message (indicating the initial state of the environment). In this example, however, we are not going to write any state generation code, so no message will ever arrive. Therefore, we use the `env.overrideFirstReceivedState(new MutableState())` call to force the Environment to think the current state is the one provided (an empty `State`) so that we can continue without waiting for a message that will never come.
 
 Finally, we use the standard BURLAP `TerminalExplorer` to allow us to manually interact with the `Environment` with keyboard commands. We also give some action name alias of w,a,s, and d so that we can simply type that key (and press enter) to have it execute a forward, rotate, or backward action. If you run the code, you should find that when you enter the keyboard commands it causes the robot to move.
+
+
+### Custom State Messages
+
+In the above examples, we talked about how to use `RosEnvironment` which subscribes to a ROS topic that is expected to publish BURLAP states via the message type `burlap_msgs/burlap_state`. However, in some cases you may want to subcribe to one or more different topics and build the BURLAP `State` from them in Java. If you wish to do that, then you will either want to extend `AbstractRosEnviroment` which includes the code for managing action publishing, but does not include any code for building the state (see its documentation for more information); or if the state is fully defined by one topic, you may wish to subclass `RosEnvironment` and override the method `unpackStateFromMsg(JsonNode data, String stringRep)` which is the method that handles parsing the JSON message from ROS into a BURLAP state (see its documentation for more information).
+
+#### Large Message Sizes
+
+If you're building your state from a custom message, it's possible the message you're receiving from ROS is very large, such as frames from a video feed. In these cases, it's likely that the message size is larger than what Jetty's websocket buffer size is by default. However, you can increase the buffer size by subclassing `RosBridge` and annotating the subclass to have a larger buffer size. You do not need to implement or override any methods; `RosBridge` is subclassed purely to give it a custom buffer size annotation. For example:
+
+```
+@WebSocket(maxTextMessageSize = 500 * 1024) public class BigMessageRosBridge extends RosBridge{}
+```
+
+If you then instantiate your subclass, connect with it, and use a AbstractRosEnvironment or RosEnvironment constructor that accepts a RosBridge instance (rather than one that asks for the URI), then your environment will be able to handle the larger message sizes. See the readme and Java doc for [java_rosbridge](https://github.com/h2r/java_rosbridge) for more information.
