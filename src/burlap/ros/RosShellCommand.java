@@ -12,7 +12,6 @@ import ros.SubscriptionRequestMsg;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -216,60 +215,5 @@ public class RosShellCommand implements ShellCommand {
 		}
 	}
 
-	public static void main(String[] args) {
-//		String str = "Location \"Welcome  to india\" Bangalore " +
-//				"Channai \"IT city\"  Mysore";
 
-//		String str = "hi there \"you \\\"guys\\\" and girls\" done";
-//		System.out.println(str);
-//
-//		List<String> list = new ArrayList<String>();
-//		Matcher m = Pattern.compile("([^\"]\\S*|\".+?(?<!\\\\)\")\\s*").matcher(str);
-//		while (m.find()) {
-//			String match = m.group(1).replace("\\\"", "\"");
-//			if(match.startsWith("\"") && match.endsWith("\"")){
-//				match = match.substring(1, match.length()-1);
-//			}
-//			list.add(match); // Add .replace("\"", "") to remove surrounding quotes.
-//		}
-//
-//		String [] array = list.toArray(new String[list.size()]);
-//
-//		System.out.println(Arrays.toString(array));
-
-
-
-
-		String str = "hi there 'you \\'guys\\' and girls' done";
-		System.out.println(str);
-
-		List<String> list = new ArrayList<String>();
-		Matcher m = Pattern.compile("([^']\\S*|'.+?(?<!\\\\)')\\s*").matcher(str);
-		while (m.find()) {
-			String match = m.group(1).replace("\\'", "'");
-			if(match.startsWith("'") && match.endsWith("'")){
-				match = match.substring(1, match.length()-1);
-			}
-			list.add(match); // Add .replace("\"", "") to remove surrounding quotes.
-		}
-
-		String [] array = list.toArray(new String[list.size()]);
-
-		System.out.println(Arrays.toString(array));
-
-
-
-//		ObjectMapper mapper = new ObjectMapper();
-//		JsonNode node = null;
-//		try {
-//			node = mapper.readTree("{\"x\": 5, \"z\": {\"a\": 1, \"b\":2}}");
-//		} catch(IOException e) {
-//			e.printStackTrace();
-//		}
-//
-//		System.out.println(node.toString());
-//		System.out.println("\n\n\n");
-//		System.out.println(node.get("z").toString());
-
-	}
 }
