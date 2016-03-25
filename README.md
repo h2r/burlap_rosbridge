@@ -17,34 +17,35 @@ See the Java doc and example code below for more informaiton.
 
 ##Compiling
 
-Compile with:
+Compiling and management is now performed with Maven. If you would like to compile with ant, use the ant branch. However, going forward all future updates will requrie Maven. If you do not have Maven, you can get it from https://maven.apache.org/download.cgi
+
+To compile use
 
 ```
-ant
+mvn compile
 ```
-Create a jar that you can use with other projects with:
-
-```
-ant dist
-```
-
-Alternatively, create a jar that includes the dependencies with 
+Create a target jar and Java doc with
 
 ```
-ant dist_all
+mvn package
 ```
 
-In both cases, the jar files will be stored in the `dist` folder.
-
-Create java doc with:
+Install the jar into your local repoistory with
 
 ```
-ant doc
+mvn install
 ```
 
-The produced Java doc will be in the `doc` folder.
+Link to burlap_rosbridge from a project by adding the following to the `<dependencies>` section of your project's pom.xml file.
 
-profit.
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap_rosbridge</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+
 
 ##Example code
 We provide two sets of example code. One is more straightforward for testing purposes. The latter shows you how to control a ROS robot that responds to Twist messages.
