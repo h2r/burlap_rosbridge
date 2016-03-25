@@ -5,6 +5,29 @@ Note that the master branch is now using the BURLAP 2 library. If you want ROS s
 
 A BURLAP library extension for interacting with robots run on ROS by creating BURLAP `Environment` instances that maintain state and execution actions by ROS topics communicated via ROS Bridge.
 
+##Linking
+burlap_rosbridge is indexed on Maven Central, so if you want to merely use it, all you need to do is include in the `<dependencies>` section of your project's pom.xml file:
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap_rosbridge</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+and it will automatically be downloaded. Note that you will also want to explicitly include BURLAP (also on Maven Central) because BURLAP is set to not link transitively through burlap_rosbridge. This choice was made to make it clear which version of BURLAP you wanted to use in your project. To link to BURLAP, add
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+or switch its version to whatever is appropriate.
+
+Alternatively, you may compile and install the code directly (or modify as needed), as described in the compiling section of this readme.
+
+
+##Description of Code
 Currently, there is an abstract `Environment`, `AbstractRosEnvironment` and one concrete implementation of it, `RosEnvironment` (there is also the `AsynchronousRosEnvironment` which is now deprecated). `AbstractRosEnvironment` provides the infrastructure for managing action execution (via the `Environment` `executeAction(GroundedAction)` method). In short, `AbstractRosEnvironment` allows you to specify `ActionPublisher` for each BURLAP `Action` that are responsible for publishing the action events to ROS. There are a number of included implementations of `ActionPublisher` in the library already, but the framework is made to enable you to implement your own. The way an `ActionPublisher` is implemented also affects whether action execution is synchronous or asynchronous.
 
 The `AbstractRosEnvironment` does not, however, maintain the state of the Environment, which is a task left for the concrete implementations of it. The provided concrete implementation `RosEnvironment` adopts an approach to maintaining state by suscribing to a ROS topic that is publishing a ROS messages of type `burlap_msgs/burlap_state` that fully represents the BURLAP state. You can get the neccessary ROS message definition from the [burlap_msgs](https://github.com/h2r/burlap_msgs) project. This paradigm means that there must exist running ROS code that handles perception and turns it into a BURLAP state representation. If you need to do additional state processing not provided in the communicated ROS message (e.g., add additional "virutal" objects to the received state) you may do so by overriding the method `onStateReceive(State)` method of the `RosEnvironment` class (see its documentation for more information).
