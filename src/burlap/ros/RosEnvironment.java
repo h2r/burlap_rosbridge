@@ -10,7 +10,7 @@ import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
 import burlap.oomdp.stateserialization.simple.SimpleSerializableState;
 import com.fasterxml.jackson.databind.JsonNode;
-import ros.MessageUnpacker;
+import ros.tools.MessageUnpacker;
 import ros.RosBridge;
 import ros.RosListenDelegate;
 
