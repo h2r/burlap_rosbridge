@@ -22,11 +22,11 @@ import java.util.Map;
  * abstract method {@link #getMostRecentRewardSignal(burlap.oomdp.core.states.State, burlap.oomdp.singleagent.GroundedAction, burlap.oomdp.core.states.State)} to be implemented.
  * Instead, the primary purpose of this class is to provide a general framework for handling action execution on ROS via the {@link burlap.ros.actionpub.ActionPublisher}
  * methodology. Specifically, for each BURLAP action (identified by its name), an {@link burlap.ros.actionpub.ActionPublisher} may be specified using one of the following
- * methods:<br/>
- * {@link #setActionPublisher(burlap.oomdp.singleagent.Action, burlap.ros.actionpub.ActionPublisher)},<br/>
- * {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}<br/>
- * {@link #setActionPublisherForMultipleAcitons(java.util.List, burlap.ros.actionpub.ActionPublisher)}, or<br/>
- * {@link #setActionPublisherForMultipleAcitonNames(java.util.List, burlap.ros.actionpub.ActionPublisher)}.<br/>
+ * methods:<p>
+ * {@link #setActionPublisher(burlap.oomdp.singleagent.Action, burlap.ros.actionpub.ActionPublisher)},<p>
+ * {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}<p>
+ * {@link #setActionPublisherForMultipleAcitons(java.util.List, burlap.ros.actionpub.ActionPublisher)}, or<p>
+ * {@link #setActionPublisherForMultipleAcitonNames(java.util.List, burlap.ros.actionpub.ActionPublisher)}.<p>
  * When {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)} is called, the corresponding {@link burlap.ros.actionpub.ActionPublisher}
  * for the provided {@link burlap.oomdp.singleagent.GroundedAction} is retrieved (with a runtime exception being thrown if none have been set for it).
  * The {@link burlap.ros.actionpub.ActionPublisher#publishAction(burlap.oomdp.singleagent.GroundedAction)} is then called and passed the input

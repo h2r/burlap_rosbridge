@@ -10,7 +10,7 @@ import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.NullRewardFunction;
 import burlap.oomdp.stateserialization.simple.SimpleSerializableState;
 import com.fasterxml.jackson.databind.JsonNode;
-import ros.MessageUnpacker;
+import ros.tools.MessageUnpacker;
 import ros.RosBridge;
 import ros.RosListenDelegate;
 
@@ -20,22 +20,22 @@ import ros.RosListenDelegate;
  * (see https://github.com/h2r/burlap_msgs). However, if it does not, you can override the {@link #unpackStateFromMsg(JsonNode, String)}
  * method to provide the code that parses the ROS message into a BURLAP {@link State} and retain the rest of the functionality
  * of this class.
- * <br/><br/>
+ * <p>
  * Note that in the constructor you may want to set a low (e.g., 1) throttle rate and queue rate if state messages
  * are sent frequently, otherwise ROS Bridge may start lagging.
- * <br/><br/>
+ * <p>
  * This class will block on the {@link #getCurrentObservation()} method until it receives a state message from
  * ROS Bridge. If you would like, you can override waiting for the first state message received from ROS and force this environment to report
  * a specific BURLAP {@link burlap.oomdp.core.states.State} using the {@link #overrideFirstReceivedState(burlap.oomdp.core.states.State)} method. Note
  * that any subsequent burlap_msgs/burlap_state messages will still update this environment's current state.
- * <br/><br/>
+ * <p>
  * This class may also be provided a BURLAP {@link burlap.oomdp.singleagent.RewardFunction} and {@link burlap.oomdp.core.TerminalFunction}
  * for generating non-zero rewards and terminal states. Use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
  * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} to set them use the {@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)}
  * and {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)} methods. This class does not have the {@link #handleEnterTerminalState()}
  * inherited from {@link burlap.ros.AbstractRosEnvironment} do anything, so if you want to inject code for handling the event
  * when the environment enters a terminal state, you should subclass this class and override that method.
- * <br/><br/>
+ * <p>
  * If you would like to augment the BURLAP {@link burlap.oomdp.core.states.State} that is parsed
  * from the ROS message, you can intercept the current environment state being set to the parsed state
  * by overriding the {@link #onStateReceive(burlap.oomdp.core.states.State)}
@@ -43,7 +43,7 @@ import ros.RosListenDelegate;
  * Note that this method differs from the {@link #unpackStateFromMsg(JsonNode, String)}, because the unpack method's role
  * is purely for parsing the message as provided, whereas the onStateReceive is used to augment that parsed state with
  * state variable values no visible to ROS.
- * <br/><br/>
+ * <p>
  * @author James MacGlashan.
  */
 public class RosEnvironment extends AbstractRosEnvironment implements RosListenDelegate{
@@ -93,7 +93,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
 	 * needing to be published to ROS. The state message type is assumed to be burlap_msgs/burlap_state.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
@@ -112,7 +112,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
 	 * needing to be published to ROS. The message type is assumed to be burlap_msgs/burlap_state.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
@@ -134,7 +134,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	 * burlap_msgs/burlap_state. Note that unless you have subclassed
 	 * {@link RosEnvironment} and overridden {@link #unpackStateFromMsg(JsonNode, String)}, the message type should be a type
 	 * that is or adheres to "burlap_msgs/burlap_state" even if named something else.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 *
@@ -156,7 +156,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
 	 * needing to be published to ROS. The state message type is assumed to be burlap_msgs/burlap_state.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
@@ -175,7 +175,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
 	 * needing to be published to ROS. The message type is assumed to be burlap_msgs/burlap_state.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 * @param domain the domain into which ROS burlap_state messages are parsed
@@ -197,7 +197,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	 * burlap_msgs/burlap_state. Note that unless you have subclassed
 	 * {@link RosEnvironment} and overridden {@link #unpackStateFromMsg(JsonNode, String)}, the message type should be a type
 	 * that is or adheres to "burlap_msgs/burlap_state" even if named something else.
-	 * <br/>
+	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
 	 *
@@ -232,20 +232,20 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 		this.tf = tf;
 	}
 
-	@Override
+
 	public State getCurrentObservation() {
 		this.blockUntilStateReceived();
 		return this.curState.copy();
 	}
 
 
-	@Override
+
 	public boolean isInTerminalState() {
 		return this.tf.isTerminal(this.curState);
 	}
 
 
-	@Override
+
 	protected double getMostRecentRewardSignal(State s, GroundedAction ga, State sprime) {
 		return this.rf.reward(s, ga, sprime);
 	}
@@ -297,7 +297,7 @@ public class RosEnvironment extends AbstractRosEnvironment implements RosListenD
 	}
 
 
-	@Override
+
 	public void receive(JsonNode data, String stringRep) {
 
 		State s = this.unpackStateFromMsg(data, stringRep);

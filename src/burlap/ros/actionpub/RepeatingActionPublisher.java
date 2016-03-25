@@ -14,7 +14,7 @@ import java.util.TimerTask;
  * be synchronous, in which the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method blocks until
  * all repeated publishes are complete; or asynchronous, in which the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method
  * returns immediately after starting its multiple publish calls in a separate thread.
- * <br/><br/>
+ * <p>
  * Note that by default, the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method will return a delay time
  * of zero if set to asynchronous, or the period is set to synchronous.
  * However, you can change this value with the {@link #setDelayTime(int)} method or by using the more complete constructor.

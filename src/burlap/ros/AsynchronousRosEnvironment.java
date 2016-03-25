@@ -27,7 +27,7 @@ import java.util.Map;
  * or subclass the {@link burlap.ros.AbstractRosEnvironment} instead. If you want actions to
  * send their message as a string of their name, set the {@link burlap.ros.actionpub.ActionPublisher}
  * for all actions to a {@link burlap.ros.actionpub.ActionStringPublisher}.
- * <br/><br/>
+ * <p>
  * An environment wrapper for state information provided over ROS with BURLAP actions
  * that are published to ROS. This environment connects to ROS using ROSBridge, which
  * must be running. State information
@@ -38,27 +38,27 @@ import java.util.Map;
  * the environment's current state is set to it by overriding the {@link #onStateReceive(burlap.oomdp.core.states.State)}
  * method, which receives the parsed state and returns a state object to which the environment's current
  * state will be updated.
- * <br/>
+ * <p>
  * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
  * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
  * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
  * method, and then published to a ROS topic. The calling thread is then stalled for some delay (giving time
  * for the action to be executed on the ROS robot and the state updated) before the {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}
  * method returns. The fact that there is no "action completion" checking is why this is considered an asynchronous environment.
- * <br/>
+ * <p>
  * After creating an environment, it may be a good idea to call the {@link #blockUntilStateReceived()} method
  * before doing anything with it. This method will block the calling thread until the environment receives a
  * state message from ROS which it uses to set its current state.
- * <br/>
+ * <p>
  * A BURLAP reward function and terminal function can also be set
  * ({@link #setRewardFunction(burlap.oomdp.singleagent.RewardFunction)} and
  * {@link #setTerminalFunction(burlap.oomdp.core.TerminalFunction)}) so that the environment will returns meaningful messages
  * from the {@link #getLastReward()} and {@link #isInTerminalState()} methods.
- * <br/>
+ * <p>
  * Note that the the environment's current state will be updated as frequently as ROSBridge provides
  * updates, but the states before and after actions returned are those from fixed time intervals set by the client
  * (and described above).
- * <br/>
+ * <p>
  * You may want to specify a throttle rate and queue size for how quickly the environment receives state message
  * from ROS Bridge. If States are published too quickly, you may find the environment's state is lagging behind as
  * it processes each received state in order.
@@ -96,7 +96,7 @@ public class AsynchronousRosEnvironment implements Environment, RosListenDelegat
 	 * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
 	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
-	 * <br/>
+	 * <p>
 	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
@@ -131,7 +131,7 @@ public class AsynchronousRosEnvironment implements Environment, RosListenDelegat
 	 * type burlap_msgs/burlap_state. The burlap_state message is parsed into an actual BURLAP
 	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
-	 * <br/>
+	 * <p>
 	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}
@@ -174,7 +174,7 @@ public class AsynchronousRosEnvironment implements Environment, RosListenDelegat
 	 * The burlap_state message is parsed into an actual BURLAP
 	 * {@link burlap.oomdp.core.states.State} object using the object classes defined in a provided
 	 * BURLAP {@link burlap.oomdp.core.Domain}.
-	 * <br/>
+	 * <p>
 	 * When this environment has an action request (via {@link #executeAction(burlap.oomdp.singleagent.GroundedAction)}),
 	 * it turns the request into a {@link burlap.oomdp.singleagent.GroundedAction}
 	 * object and a string rep of the object is retrieved (via the {@link burlap.oomdp.singleagent.GroundedAction#toString()}

@@ -29,12 +29,10 @@ public class RosShellCommand implements ShellCommand {
 		this.ros = ros;
 	}
 
-	@Override
 	public String commandName() {
 		return "ros";
 	}
 
-	@Override
 	public int call(BurlapShell shell, String argString, final Scanner is, final PrintStream os) {
 
 		String [] parsed = this.parseWithQuotesAndEscapedQuotes(argString);
@@ -122,7 +120,7 @@ public class RosShellCommand implements ShellCommand {
 
 
 				final Thread echoThread = new Thread(new Runnable() {
-					@Override
+
 					public void run() {
 						MyTimer time = new MyTimer(true);
 						synchronized(RosShellCommand.this){
@@ -153,7 +151,7 @@ public class RosShellCommand implements ShellCommand {
 			else{
 
 				RosListenDelegate echoer = new RosListenDelegate() {
-					@Override
+
 					public void receive(JsonNode data, String stringRep) {
 						JsonNode rosMsgNode = data.get("msg");
 						String msgFormat = rosMsgNode.toString();
@@ -203,7 +201,7 @@ public class RosShellCommand implements ShellCommand {
 			this.lock = lock;
 		}
 
-		@Override
+
 		public void receive(JsonNode data, String stringRep) {
 			JsonNode rosMsgNode = data.get("msg");
 			String msgFormat = rosMsgNode.toString();

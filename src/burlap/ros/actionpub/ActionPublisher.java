@@ -9,7 +9,7 @@ import ros.RosBridge;
  * a ROS message and publish it to a ROS topic. The abstract class {@link burlap.ros.actionpub.ActionPublisher.DirectActionPublisher}
  * provides a {@link ros.Publisher} data member and constructors for easily setting up a means to publish to
  * {@link ros.RosBridge}.
- * <br/><br/>
+ * <p>
  * Note that the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method should return a time delay, in
  * milliseconds, that tells the caller how long it should wait for the published action to finish executing. If the
  * {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method blocks until an action has completed
