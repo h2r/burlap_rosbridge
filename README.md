@@ -183,3 +183,8 @@ If you're building your state from a custom message, it's possible the message y
 ```
 
 If you then instantiate your subclass, connect with it, and use a AbstractRosEnvironment or RosEnvironment constructor that accepts a RosBridge instance (rather than one that asks for the URI), then your environment will be able to handle the larger message sizes. See the readme and Java doc for [java_rosbridge](https://github.com/h2r/java_rosbridge) for more information.
+
+
+### RosShellCommand
+
+Given the addition of an interactive shell to BURLAP, burlap_rosbridge also comes with an additional `ShellCommand` for interacting with RosBridge that you can add to your shells called `RosShellCommand`. This command allows you to echo a topic on ROS, publish to a topic, or a send a raw message to the RosBridge server. After adding it to your shell, see it's help with the -h option for more information.
