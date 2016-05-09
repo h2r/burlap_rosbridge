@@ -1,18 +1,19 @@
 package burlap.ros.actionpub;
 
-import burlap.oomdp.singleagent.GroundedAction;
+
+import burlap.mdp.singleagent.GroundedAction;
 import ros.Publisher;
 import ros.RosBridge;
 
 /**
- * An interface for classes that can take as input a {@link burlap.oomdp.singleagent.GroundedAction}, turn it into
+ * An interface for classes that can take as input a {@link GroundedAction}, turn it into
  * a ROS message and publish it to a ROS topic. The abstract class {@link burlap.ros.actionpub.ActionPublisher.DirectActionPublisher}
  * provides a {@link ros.Publisher} data member and constructors for easily setting up a means to publish to
  * {@link ros.RosBridge}.
  * <p>
- * Note that the {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method should return a time delay, in
+ * Note that the {@link #publishAction(GroundedAction)} method should return a time delay, in
  * milliseconds, that tells the caller how long it should wait for the published action to finish executing. If the
- * {@link #publishAction(burlap.oomdp.singleagent.GroundedAction)} method blocks until an action has completed
+ * {@link #publishAction(GroundedAction)} method blocks until an action has completed
  * executing on ROS, then it should return 0. This approach allows you to dynamically determine
  * if actions should be synchronous or asynchronous by how you implement {@link burlap.ros.actionpub.ActionPublisher}.
  * @author James MacGlashan.
@@ -21,10 +22,10 @@ public interface ActionPublisher {
 
 
 	/**
-	 * Takes a BURLAP {@link burlap.oomdp.singleagent.GroundedAction} turns into a ROS message, and publishes it to ROS through this
+	 * Takes a BURLAP {@link GroundedAction} turns into a ROS message, and publishes it to ROS through this
 	 * object's ROS Bridge {@link ros.Publisher} object. Note that when you implement this method, you must make the publish
 	 * call to ROSBridge yourself using a {@link ros.Publisher} object.
-	 * @param a The BURLAP {@link burlap.oomdp.singleagent.GroundedAction} to turn into a ROS message and publish.
+	 * @param a The BURLAP {@link GroundedAction} to turn into a ROS message and publish.
 	 * @return the time in milliseconds that the calling code should wait for the published action to finish executing. Will return 0 if this method blocks until ROS action completion.
 	 */
 	int publishAction(GroundedAction a);
@@ -34,7 +35,7 @@ public interface ActionPublisher {
 	 * An abstract class that implements {@link burlap.ros.actionpub.ActionPublisher} and provides
 	 * a {@link ros.Publisher} data member, constructors, and setters and getters for streamlining
 	 * the publishing of messages to ROS BRidge. Note that you still need to implement
-	 * the {@link burlap.ros.actionpub.ActionPublisher#publishAction(burlap.oomdp.singleagent.GroundedAction)} method
+	 * the {@link burlap.ros.actionpub.ActionPublisher#publishAction(GroundedAction)} method
 	 * yourself and within that method you will need to publish the created message to this objects {@link ros.Publisher}
 	 * {@link #pub} data member or use this objects {@link #publish(Object)} method to indirectly publish to the data member.
 	 */
