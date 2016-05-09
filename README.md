@@ -1,15 +1,38 @@
 burlap_rosbridge
 ================
 
-Note that the master branch is now using the BURLAP 2 library. If you want ROS support for BURLAP version 1, use the v1 branch.
-
 A BURLAP library extension for interacting with robots run on ROS by creating BURLAP `Environment` instances that maintain state and execution actions by ROS topics communicated via ROS Bridge.
 
-Currently, there is an abstract `Environment`, `AbstractRosEnvironment` and one concrete implementation of it, `RosEnvironment` (there is also the `AsynchronousRosEnvironment` which is now deprecated). `AbstractRosEnvironment` provides the infrastructure for managing action execution (via the `Environment` `executeAction(GroundedAction)` method). In short, `AbstractRosEnvironment` allows you to specify `ActionPublisher` for each BURLAP `Action` that are responsible for publishing the action events to ROS. There are a number of included implementations of `ActionPublisher` in the library already, but the framework is made to enable you to implement your own. The way an `ActionPublisher` is implemented also affects whether action execution is synchronous or asynchronous.
+##Linking
+burlap_rosbridge is indexed on Maven Central, so if you want to merely use it, all you need to do is include in the `<dependencies>` section of your project's pom.xml file:
+(To change for 2.2.0)
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap_rosbridge</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+and it will automatically be downloaded. Note that you will also want to explicitly include BURLAP (also on Maven Central) because BURLAP is set to not link transitively through burlap_rosbridge. This choice was made to make it clear which version of BURLAP you wanted to use in your project. To link to BURLAP, add
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+or switch its version to whatever is appropriate.
 
-The `AbstractRosEnvironment` does not, however, maintain the state of the Environment, which is a task left for the concrete implementations of it. The provided concrete implementation `RosEnvironment` adopts an approach to maintaining state by suscribing to a ROS topic that is publishing a ROS messages of type `burlap_msgs/burlap_state` that fully represents the BURLAP state. You can get the neccessary ROS message definition from the [burlap_msgs](https://github.com/h2r/burlap_msgs) project. This paradigm means that there must exist running ROS code that handles perception and turns it into a BURLAP state representation. If you need to do additional state processing not provided in the communicated ROS message (e.g., add additional "virutal" objects to the received state) you may do so by overriding the method `onStateReceive(State)` method of the `RosEnvironment` class (see its documentation for more information).
+Alternatively, you may compile and install the code directly (or modify as needed), as described in the compiling section of this readme.
 
-If you would prefer to have BURLAP code create the `State` from various standard ROS topics (rather than having a ROS topic that is publishing it), then you may want to create your own extension of `AbstractRosEnvironment` so that you can still beneift from the action publishing tools it provides. See its documentation for more information on how to do that, but so long as your implement its required abstract methods (and unimplemented methods inherited from `Environment`) it will work.
+
+##Description of Code
+Currently, there are two abstract `Environment` implementations, `AbstractRosEnvironment` and a slightly more concrete implementation, `RosEnvironment`. `AbstractRosEnvironment` provides the infrastructure for managing action execution (via the `Environment` `executeAction(GroundedAction)` method). In short, `AbstractRosEnvironment` allows you to specify `ActionPublisher` objects for each BURLAP `Action` that are responsible for publishing the action events to ROS. There are a number of included implementations of `ActionPublisher` in the library already, but the framework is made to enable you to implement your own. The way an `ActionPublisher` is implemented also affects whether action execution is synchronous or asynchronous.
+
+The `AbstractRosEnvironment` does not, however, maintain the state of the Environment, which is a task left for the concrete implementations of it. The `RosEnvironment` extends `AbstractRosEnvrionment` with additional methods in which there is a single ROS topic that is publishing the state of the environment. Rewards and termination conditions for the environment are then handled by specifying standard BURLAP RewardFunction and TerminalFunction implementations that will operate on the state. Implementing `RosEnvironment` requires implementing a single method: `State unpackStateFromMsg(JsonNode data, String stringRep)` which is given the JSON message of the ROS topic and should turn it into a BURLAP `State` object that is returned. You may want to use the provided `MessageUnpacker` class if you have an implemented `State` object whose datastructure matches the ROS message and can be straightforwardly unpacked.
+
+
+If you would prefer to have BURLAP code create the `State` from various ROS topics (rather than having a single ROS topic that is publishing it), then you may want to create your own extension of `AbstractRosEnvironment`.
 
 Although BURLAP is currently compatible with Java 6, You will need Java 7 to use this library because the ROS Bridge Websocket connection (provided by our [java_rosbridge](https://github.com/h2r/java_rosbridge) library) uses Jetty 9, which requires Java 7.
 
@@ -17,34 +40,35 @@ See the Java doc and example code below for more informaiton.
 
 ##Compiling
 
-Compile with:
+Compiling and management is now performed with Maven. If you would like to compile with ant, use the ant branch. However, going forward all future updates will requrie Maven. If you do not have Maven, you can get it from https://maven.apache.org/download.cgi
+
+To compile use
 
 ```
-ant
+mvn compile
 ```
-Create a jar that you can use with other projects with:
-
-```
-ant dist
-```
-
-Alternatively, create a jar that includes the dependencies with 
+Create a target jar and Java doc with
 
 ```
-ant dist_all
+mvn package
 ```
 
-In both cases, the jar files will be stored in the `dist` folder.
-
-Create java doc with:
+Install the jar into your local repoistory with
 
 ```
-ant doc
+mvn install
 ```
 
-The produced Java doc will be in the `doc` folder.
+Link to burlap_rosbridge from a project by adding the following to the `<dependencies>` section of your project's pom.xml file.
 
-profit.
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>burlap_rosbridge</artifactId>
+  <version>2.1.0</version>
+</dependency>
+```
+
 
 ##Example code
 We provide two sets of example code. One is more straightforward for testing purposes. The latter shows you how to control a ROS robot that responds to Twist messages.
