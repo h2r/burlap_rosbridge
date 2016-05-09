@@ -75,52 +75,27 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	protected int debugCode = 7345252;
 
 
-
-
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
-	 * needing to be published to ROS. The state message type is assumed to be burlap_msgs/burlap_state.
+	 * needing to be published to ROS.
 	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
+	 *
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
-	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
+	 * @param rosStateTopic the name of the ROS topic that publishes the state messages.
+	 * @param rosStateMessageType the message type of the ROS state messages.
 	 */
-	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic){
-		super(rosBridgeURI);
-		this.domain = domain;
-		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this);
-
-
+	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType){
+		this(domain, rosBridgeURI, rosStateTopic, rosStateMessageType, 1, 1);
 
 	}
 
-	/**
-	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
-	 * needing to be published to ROS. The message type is assumed to be burlap_msgs/burlap_state.
-	 * <p>
-	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
-	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
-	 * @param domain the domain into which ROS burlap_state messages are parsed
-	 * @param rosBridgeURI the URI of the ros bridge server. Note that by default, ros bridge uses port 9090. An example URI is ws://localhost:9090
-	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
-	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
-	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
-	 */
-	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, int rosBridgeThrottleRate, int rosBridgeQueueLength){
-		super(rosBridgeURI);
-		this.domain = domain;
-		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this, rosBridgeThrottleRate, rosBridgeQueueLength);
-
-	}
 
 	/**
 	 * Creates an environment wrapper for state information provided over ROS with BURLAP actions
-	 * needing to be published to ROS. Here, the state message type may be specified to be something other than
-	 * burlap_msgs/burlap_state. Note that unless you have subclassed
-	 * {@link RosEnvironment} and overridden {@link #unpackStateFromMsg(JsonNode, String)}, the message type should be a type
-	 * that is or adheres to "burlap_msgs/burlap_state" even if named something else.
+	 * needing to be published to ROS.
 	 * <p>
 	 * Remember that for actions to be properly handled, you will need to set the {@link burlap.ros.actionpub.ActionPublisher}
 	 * to use for each action after this class is constructed with one of the appropriate methods (e.g., {@link #setActionPublisher(String, burlap.ros.actionpub.ActionPublisher)}).
