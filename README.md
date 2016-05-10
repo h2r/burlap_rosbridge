@@ -75,30 +75,67 @@ We provide two sets of example code. One is more straightforward for testing pur
 
 ###Example 1
 ```
-public static void main(String[] args) {
+public class Example1 {
 
-	//define the grid world
-	GridWorldDomain gwd = new GridWorldDomain(11, 11);
-	gwd.makeEmptyMap();
-	final Domain domain = gwd.generateDomain();
+	public static class StringState implements State{
 
-	//setup ROS information
-	String uri = "ws://localhost:9090";
-	String stateTopic = "/burlap_state";
-	String actionTopic = "/burlap_action";
+		public String data;
+
+		public StringState() {
+		}
+
+		public StringState(String data) {
+			this.data = data;
+		}
+
+		@Override
+		public List<Object> variableKeys() {
+			return Arrays.<Object>asList("data");
+		}
+
+		@Override
+		public Object get(Object variableKey) {
+			return data;
+		}
+
+		@Override
+		public State copy() {
+			return new StringState(data);
+		}
+
+		@Override
+		public String toString() {
+			return data;
+		}
+	}
+
+	public static void main(String[] args) {
+
+		SADomain domain = new SADomain();
+		new NullAction("action1", domain);
+		new NullAction("action2", domain);
+
+		//setup ROS information
+		String uri = "ws://localhost:9090";
+		String stateTopic = "/burlap_state";
+		String stateMessage = "std_msgs/String";
+		String actionTopic = "/burlap_action";
 
 
-	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
-	env.setActionPublisherForMultipleAcitons(domain.getActions(), new ActionStringPublisher(actionTopic, env.getRosBridge(), 500));
+		RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, stateMessage) {
+			@Override
+			public State unpackStateFromMsg(JsonNode data, String stringRep) {
+				MessageUnpacker<StringState> unpacker = new MessageUnpacker<StringState>(StringState.class);
+				return unpacker.unpackRosMessage(data);
+			}
+		};
+		env.setActionPublisherForMultipleAcitons(domain.getActions(), new ActionStringPublisher(actionTopic, env.getRosBridge(), 500));
+		env.setPrintStateAsReceived(true);
 
-	//optionally, uncomment the below so that you can see the received state printed to the terminal
-	//env.setPrintStateAsReceived(true);
+		Policy randPolicy = new RandomPolicy(domain);
+		randPolicy.evaluateBehavior(env, 100);
 
-	//create a random policy for control that connects to the environment wrapped domain
-	Policy randPolicy = new RandomPolicy(domain);
-
-	//begin behavior in the environment for 100 steps (50 seconds)
-	randPolicy.evaluateBehavior(env, 100);
+	}
 
 }
 
@@ -106,13 +143,11 @@ public static void main(String[] args) {
 
 
 In this example code we assume that ROS is being run on the local host (port 9090 as default for ROS Bridge)
-and that there is a ROS topic named `/burlap_state` that has a Grid World state message being published. For testing purposes, you can have ROS publish a dummy burlap_state message in which the agent is located at position 1,2 with the following command:
+and that there is a ROS topic named `/burlap_state` that is defined by a single string state variable. For testing purposes, you can have ROS publish a dummy burlap_state message that simply has the string value "hello" with the following ros command:
 
-`rostopic pub /burlap_state burlap_msgs/burlap_state -r 1 -- '[{name: agent0, object_class: agent, values: [{attribute: x, value: "1"},{attribute: y, value: "2"}]}]'`
+`rostopic pub /burlap_state std_msgs/String -r 1 -- 'hello'`
 
-This command will cause the burlap_state to be published at a rate of 1hz. Naturally, since it is required for this code, you need to be using the burlap_msgs ROS package for the message types. These are available on [github](https://github.com/h2r/burlap_msgs) and are installed into your ROS workspace in the usual way. To confirm that your ROS workspace knows about the burlap_msg types, use the command `rosmsg list | grep "burlap"` which should print out the entires for burlap_state, burlap_object, and burlap_value. If they are not present and you installed (and compiled with catkin_make) the messages, you may need to re-source your ROS workspace with the command `source pathToWorkspace/devel/setup.bash`. You can confirm that your burlap_state message is indeed being published at 1hz using the rostopic command 
-
-`rostopic echo /burlap_state`.
+The first thing we do is define a cooresponding BURLAP `State` definition for a state define by a single string value. Note that to make unpacking trivial, the State class uses data fields that perfectly match the ROS data structure for the std_msgs/String message; that is, it is defined by a single String field named `data`.
 
 In this code, we have action execution for all actions handled by a single `ActionStringPublisher`. This implementation of `ActionPublisher` simply publishes the string representation of the input `GroundedAction` as a `std_msgs/String` ROS message to a designated topic (in this case, `/burlap_action`) and blocks further BURLAP executaion for some designated amount of time (in this case, 500 milliseconds) to allow the action on the robot to have an effect. For this publisher to actually do anything on a real robot, you would need ROS code that subscribed to `/burlap_action` and turned the string represetnation into a set of physical actuations (either through additional ROS topic publishing or by being the driver of the robot). Often times, you will probably want a more direct connection to the Robot's actuators than the `ActionStringPublisher` provides. However, for illustrative purposes this example is convenient because to see that the BURLAP-ROS connection is working, we simply need to run the ROS command 
 
