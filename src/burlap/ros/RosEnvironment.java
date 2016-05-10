@@ -124,11 +124,12 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param domain the domain into which ROS burlap_state messages are parsed
 	 * @param ros the connected {@link RosBridge} instance.
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
+	 * @param rosStateMessageType the message type of the ROS state messages.
 	 */
-	public RosEnvironment(Domain domain, RosBridge ros, String rosStateTopic){
+	public RosEnvironment(Domain domain, RosBridge ros, String rosStateTopic, String rosStateMessageType){
 		super(ros);
 		this.domain = domain;
-		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this);
+		this.rosBridge.subscribe(rosStateTopic, rosStateMessageType, this);
 
 
 
