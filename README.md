@@ -187,6 +187,7 @@ public class Example2 {
 		//setup ROS information
 		String uri = "ws://localhost:9090";
 		String stateTopic = "/burlap_state";
+		String stateMessage = "std_msgs/String"; //state topic and type irrelevant for this example
 		String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
 		String actionMsg = "geometry_msgs/Twist";
 	
