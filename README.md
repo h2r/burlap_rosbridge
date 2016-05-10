@@ -5,12 +5,12 @@ A BURLAP library extension for interacting with robots run on ROS by creating BU
 
 ##Linking
 burlap_rosbridge is indexed on Maven Central, so if you want to merely use it, all you need to do is include in the `<dependencies>` section of your project's pom.xml file:
-(To change for 2.2.0)
+(As of writing this, 2.2.0 is not yet on Maven Central as it is not finished)
 ```
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap_rosbridge</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
 </dependency>
 ```
 and it will automatically be downloaded. Note that you will also want to explicitly include BURLAP (also on Maven Central) because BURLAP is set to not link transitively through burlap_rosbridge. This choice was made to make it clear which version of BURLAP you wanted to use in your project. To link to BURLAP, add
@@ -18,7 +18,7 @@ and it will automatically be downloaded. Note that you will also want to explici
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0-SNAPSHOT</version>
 </dependency>
 ```
 or switch its version to whatever is appropriate.
@@ -143,99 +143,92 @@ public class Example1 {
 
 
 In this example code we assume that ROS is being run on the local host (port 9090 as default for ROS Bridge)
-and that there is a ROS topic named `/burlap_state` that is defined by a single string state variable. For testing purposes, you can have ROS publish a dummy burlap_state message that simply has the string value "hello" with the following ros command:
+and that there is a ROS topic named `/burlap_state` that is defined by a single string state variable. Generally, your state message from ROS would be something much more expressive than a string message, but we're using something as simple a string for demonstration purposes. For testing, you can have ROS publish a dummy burlap_state string message that simply has the string value "hello" with the following ros command:
 
 `rostopic pub /burlap_state std_msgs/String -r 1 -- 'hello'`
 
-The first thing we do is define a cooresponding BURLAP `State` definition for a state define by a single string value. Note that to make unpacking trivial, the State class uses data fields that perfectly match the ROS data structure for the std_msgs/String message; that is, it is defined by a single String field named `data`.
+The first thing we do in our example code is define a cooresponding BURLAP `State` definition for a state define by a single string value. Note that to make ROS message unpacking trivial, we define the State class ti use public data fields that perfectly match the ROS data structure for the std_msgs/String message; that is, it is defined by a single String field named `data`. Furthermore, we make sure that we have a default constructor for de-serialization.
 
-In this code, we have action execution for all actions handled by a single `ActionStringPublisher`. This implementation of `ActionPublisher` simply publishes the string representation of the input `GroundedAction` as a `std_msgs/String` ROS message to a designated topic (in this case, `/burlap_action`) and blocks further BURLAP executaion for some designated amount of time (in this case, 500 milliseconds) to allow the action on the robot to have an effect. For this publisher to actually do anything on a real robot, you would need ROS code that subscribed to `/burlap_action` and turned the string represetnation into a set of physical actuations (either through additional ROS topic publishing or by being the driver of the robot). Often times, you will probably want a more direct connection to the Robot's actuators than the `ActionStringPublisher` provides. However, for illustrative purposes this example is convenient because to see that the BURLAP-ROS connection is working, we simply need to run the ROS command 
+In our main method, we begin by constructing an example domain that consists of two actions, "action1" and "action2". Next we define the string values for our ROS set up (e.g., ROSBridge address--which we assume to be the localhost--and message topics/types. Then we implement our subclass of RosEnvironment that turns the ROS string message into our `StringState` using the java_rosbridge `MessageUnpacker`. We also tell our RosBridge environment to use a String publisher for action executions, which means the action name will be set as a String message to the ROS topic, and set the duration of an action to be for 500ms (that is, the action execution in BURLAP will block for 500ms, giving ROS time to execute the action message).
 
-`rostopic echo burlap_action`
+Finally, we setup a `RandomPolicy` in BURLAP and have it run for 100 steps in our ROS environment.
 
-which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random GridWorld policy running, so you should see a random assorment of "north," "south," "east," and "west."
+When you run the code, you should find that it's printing the "hello" State string the environment is generating from the message it's receiving from ROS. And on the command line of the ROS computer, if you enter the command
+```
+rostopic echo /burlap_action
+```
+you should see it printing out the random action choices from our random policy.
 
 ###Example 2
 In the last example we setup an environment that published actions as string representations of the action name. This approach is only effective if you have some ROS code running that knows how to interpret the string representations
 and actuate it on the robot, thereby requiring a middle man. A more direct way to control the robot is to have
-action execution publish more typical ROS messages that specify the actuation. For example, on turtlebot robots, and various other robots, it is common to publish a ROS Twist message over a period of time to have the robot move. In this example code, we setup the BURLAP environment so that action execution results in publishing a Twist message for a fixed duration, thereby directly controlling the robot without a middle-man ROS script. We also then use a `TerminalExplorer` over the Environment we created so that you can manually control the robot through the terminal to test it out. 
+action execution publish more typical ROS messages that specify the actuation. For example, on turtlebot robots, and various other robots, it is common to publish a ROS Twist message over a period of time to have the robot move. In this example code, we setup the BURLAP environment so that action execution results in publishing a Twist message for a fixed duration, thereby directly controlling the robot without a middle-man ROS script. We also then use a `EnvironmentShell` over the Environment we created so that you can manually control the robot through the terminal to test it out. In this case, we won't bother parsing a `State` since we are just demonstrating more advanced action execution and instead will tell our Environment to simply always return a `NullState`.
 
 ```
-public static void main(String [] args){
+public class Example2 {
 
-	//create a new domain with no state representation
-	Domain domain = new SADomain();
-
-	//create action specification (we don't need to define transition dynamics since we won't be doing any planning)
-	new NullAction("forward", domain); //forward
-	new NullAction("backward", domain); //backward
-	new NullAction("rotate", domain); //clockwise rotate
-	new NullAction("rotate_ccw", domain); //counter-clockwise rotate
-
-
-	//setup ROS information
-	String uri = "ws://localhost:9090";
-	String stateTopic = "/burlap_state"; //we won't need this in this example, so set it to anything
-	String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
-	String actionMsg = "geometry_msgs/Twist";
-
-
-	//define the relevant twist messages that we'll use for our actions
-	Twist fTwist = new Twist(new Vector3(0.1,0,0.), new Vector3()); //forward
-	Twist bTwist = new Twist(new Vector3(-0.1,0,0.), new Vector3()); //backward
-	Twist rTwist = new Twist(new Vector3(), new Vector3(0,0,-0.5)); //clockwise rotate
-	Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
-
-	//create environment
-	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
-
-	int period = 500; //publish every 500 milliseconds...
-	int nPublishes = 5; //...for 5 times for each action execution...
-	boolean sync = true; //...and use synchronized action execution
-	env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, period, nPublishes, sync));
-	env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, period, nPublishes, sync));
-	env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, period, nPublishes, sync));
-	env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, period, nPublishes, sync));
-
-	//force the environment state to a null state so we don't have to setup a burlap_state topic on ROS
-	env.overrideFirstReceivedState(new MutableState());
-
-
-	//create a terminal controlled explorer to run on our environment
-	//so that we can control the robot with the keyboard
-	TerminalExplorer exp = new TerminalExplorer(domain, env);
-
-	//add some alias for the action names so that we don't have to write the full action name out
-	exp.addActionShortHand("d", "rotate");
-	exp.addActionShortHand("a", "rotate_ccw");
-	exp.addActionShortHand("w", "forward");
-	exp.addActionShortHand("s", "backward");
-	exp.addActionShortHand("x", "stop");
-
-	exp.explore();
+	public static void main(String [] args){
+	
+		//create a new domain with no state representation
+		Domain domain = new SADomain();
+	
+		//create action specification (we don't need to define transition dynamics since we won't be doing any planning)
+		new NullAction("forward", domain); //forward
+		new NullAction("backward", domain); //backward
+		new NullAction("rotate", domain); //clockwise rotate
+		new NullAction("rotate_ccw", domain); //counter-clockwise rotate
+	
+		//define the relevant twist messages that we'll use for our actions
+		Twist fTwist = new Twist(new Vector3(0.1,0,0.), new Vector3()); //forward
+		Twist bTwist = new Twist(new Vector3(-0.1,0,0.), new Vector3()); //backward
+		Twist rTwist = new Twist(new Vector3(), new Vector3(0,0,-0.5)); //clockwise rotate
+		Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
+	
+		//setup ROS information
+		String uri = "ws://localhost:9090";
+		String stateTopic = "/burlap_state";
+		String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
+		String actionMsg = "geometry_msgs/Twist";
+	
+	
+		//create environment
+		RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, stateMessage) {
+			@Override
+			public State unpackStateFromMsg(JsonNode data, String stringRep) {
+				return NullState.instance;
+			}
+		};
+		
+		//force the environment state to a NullState so we don't have to setup a burlap_state topic on ROS
+		env.overrideFirstReceivedState(NullState.instance);
+	
+		int period = 500; //publish every 500 milliseconds...
+		int nPublishes = 5; //...for 5 times for each action execution...
+		boolean sync = true; //...and use synchronized action execution
+		env.setActionPublisher("forward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), fTwist, period, nPublishes, sync));
+		env.setActionPublisher("backward", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), bTwist, period, nPublishes, sync));
+		env.setActionPublisher("rotate", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rTwist, period, nPublishes, sync));
+		env.setActionPublisher("rotate_ccw", new RepeatingActionPublisher(actionTopic, actionMsg, env.getRosBridge(), rccwTwist, period, nPublishes, sync));
+	
+		//create a shell to control the turtlebot with the ex command
+		EnvironmentShell shell = new EnvironmentShell(domain, env);
+		shell.start();
+	}
 
 }
 ```
-The first thing to note about this example code is that we are not using GridWorld. For this example, we don't care to maintain any state since we simply want to show you how to use the code to directly control a robot with Twist messages. Therefore, we create an empty BURLAP `Domain` with some `Action` objects for a forward, backward, and rotate actions (we use the `NullAction` since we are ony going to execute actions through the `RosEnvironment` and therefore don't need to define any transition dynamics).
+The first thing we do is create a domain with actions for rotating in either direction, going forward, backwards, or doing nothing. Next we create Twist objects that are part of the [java_rosbridge](https://github.com/h2r/java_rosbridge) library we are using. These objects are Java Beans that follow the same structure as the ROS Twist message: a linear `Vector3` component and an angular `Vector3` component. Note that if you were writing code for a different kind of robot that didn't respond to Twist messages and used a message type not in [java_rosbridge](https://github.com/h2r/java_rosbridge), you could simply create your own [Java Bean](https://en.wikipedia.org/wiki/JavaBeans) class for the ROS message and use that just as well.
 
-Next we create Twist objects that are part of the [java_rosbridge](https://github.com/h2r/java_rosbridge) library we are using. These objects are Java Beans that follow the same structure as the ROS Twist message: a linear `Vector3` component and an angular `Vector3` component. Note that if you were writing code for a different kind of robot that didn't respond to Twist messages and used a message type not in [java_rosbridge](https://github.com/h2r/java_rosbridge), you could simply create your own [Java Bean](https://en.wikipedia.org/wiki/JavaBeans) class for the ROS message and use that just as well.
+We then setup a `RosEnvironment` in a similar way as before, but this time for simplicity of demonstration, note that we just return a `NullState`. We also tell the `RosEnvironment` not to block on waiting for a state message to be received since it won't be receiving one and immediately set the state to a `NullState`.
 
-For the ROS environment we have to provide standard information about the ROS Bridge URI and the state topic. We won't actually be using the state topic in this example, so we could give it any name.
+We then set up a `ActionPublisher` for each of our BURLAP actions. Specifically, we use a `RepeatingActionPublisher`. A `RepeatingActionPublisher` will have the affect of publishing a specified message a fixed number of times at a specified period. Specifically, for each BURLAP action, we define a `RepeatingActionPublisher` that will publish the corresponding Twist message 5 times with a period of 500 milliseconds between each publish. We also have to specify the action topic for this message. We set it to the topic commonly used by the Turtlebot robot, but you should be sure set it to whichever topic your Twist-controlled robot will respond. Note that we set a synchronized flag for the  `RepeatingActionPublisher` publisher to true. This has the effect of the `ActionPublisher` blocking until it has published all 5 messages before returning control to the calling `Environment`. Because we set it to be synchronized, it will also automatically set the return delay to the period length, which will cause the `RosEnvironment` to wait an additional 500 millseconds after the `RepeatingActionPublisher` published its final 5th message thereby allowing time for that final message to have an affect.
 
-After creating our `RosEnvironment` we set up a `ActionPublisher` for each of our BURLAP actions. Specifically, we use a `RepeatingActionPublisher`. A `RepeatingActionPublisher` will have the affect of publishing a specified message a fixed number of times at a specified period. Specifically, for each BURLAP action, we define a `RepeatingActionPublisher` that will publish the corresponding Twist message 5 times with a period of 500 milliseconds between each publish. We also have to specify the action topic for this message. We set it to the topic commonly used by the Turtlebot robot, but you should be sure set it to whichever topic your Twist-controlled robot will respond. Note that we set a synchronized flag for the  `RepeatingActionPublisher` publisher to true. This has the effect of the `ActionPublisher` blocking until it has published all 5 messages before returning control to the calling `Environment`. Because we set it to be synchronized, it will also automatically set the return delay to the period length, which will cause the `RosEnvironment` to wait an additional 500 millseconds after the `RepeatingActionPublisher` published its final 5th message thereby allowing time for that final message to have an affect.
+Finally, we use the standard BURLAP `EnvironmentShell` to allow us to manually interact with the `Environment` with keyboard commands. When you run the code, the shell should start and you should be able to use the `ex` command to specify acitons to execute. For example, try `ex forward`.
 
-Normally when interacting with a `RosEnvironment` no observations or actions will be permitted until it receives from ROS the first State message (indicating the initial state of the environment). In this example, however, we are not going to write any state generation code, so no message will ever arrive. Therefore, we use the `env.overrideFirstReceivedState(new MutableState())` call to force the Environment to think the current state is the one provided (an empty `State`) so that we can continue without waiting for a message that will never come.
-
-Finally, we use the standard BURLAP `TerminalExplorer` to allow us to manually interact with the `Environment` with keyboard commands. We also give some action name alias of w,a,s, and d so that we can simply type that key (and press enter) to have it execute a forward, rotate, or backward action. If you run the code, you should find that when you enter the keyboard commands it causes the robot to move.
-
-
-### Custom State Messages
-
-In the above examples, we talked about how to use `RosEnvironment` which subscribes to a ROS topic that is expected to publish BURLAP states via the message type `burlap_msgs/burlap_state`. However, in some cases you may want to subcribe to one or more different topics and build the BURLAP `State` from them in Java. If you wish to do that, then you will either want to extend `AbstractRosEnviroment` which includes the code for managing action publishing, but does not include any code for building the state (see its documentation for more information); or if the state is fully defined by one topic, you may wish to subclass `RosEnvironment` and override the method `unpackStateFromMsg(JsonNode data, String stringRep)` which is the method that handles parsing the JSON message from ROS into a BURLAP state (see its documentation for more information).
 
 #### Large Message Sizes
 
-If you're building your state from a custom message, it's possible the message you're receiving from ROS is very large, such as frames from a video feed. In these cases, it's likely that the message size is larger than what Jetty's websocket buffer size is by default. However, you can increase the buffer size by subclassing `RosBridge` and annotating the subclass to have a larger buffer size. You do not need to implement or override any methods; `RosBridge` is subclassed purely to give it a custom buffer size annotation. For example:
+Some state messages from ROS might be very large, such as frames from a video feed. In these cases, it's likely that the message size is larger than what Jetty's websocket buffer size is by default. However, you can increase the buffer size by subclassing `RosBridge` and annotating the subclass to have a larger buffer size. You do not need to implement or override any methods; `RosBridge` is subclassed purely to give it a custom buffer size annotation. For example:
 
 ```
 @WebSocket(maxTextMessageSize = 500 * 1024) public class BigMessageRosBridge extends RosBridge{}
@@ -246,4 +239,9 @@ If you then instantiate your subclass, connect with it, and use a AbstractRosEnv
 
 ### RosShellCommand
 
-Given the addition of an interactive shell to BURLAP, burlap_rosbridge also comes with an additional `ShellCommand` for interacting with RosBridge that you can add to your shells called `RosShellCommand`. This command allows you to echo a topic on ROS, publish to a topic, or a send a raw message to the RosBridge server. After adding it to your shell, see it's help with the -h option for more information.
+burlap_rosbridge also comes with an additional `ShellCommand` for interacting with RosBridge that you can add to your shells called `RosShellCommand`. This command allows you to echo a topic on ROS, publish to a topic, or a send a raw message to the RosBridge server. After adding it to your shell, see it's help with the -h option for more information. For example, add it to your shell as follows:
+```
+EnvironmentShell shell = new EnvironmentShell(domain, env);
+shell.addCommand(new RosShellCommand(env.getRosBridge()));
+shell.start();
+```
