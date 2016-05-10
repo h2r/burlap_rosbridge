@@ -65,7 +65,7 @@ Link to burlap_rosbridge from a project by adding the following to the `<depende
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap_rosbridge</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
