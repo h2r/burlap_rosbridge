@@ -151,12 +151,12 @@ In this code, we have action execution for all actions handled by a single `Acti
 
 `rostopic echo burlap_action`
 
-which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random  policy running, so you should see a random assorment of "action1," and "action2."
+which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random  policy running, so you should see a random assortment of "action1," and "action2."
 
 ###Example 2
 In the last example we setup an environment that published actions as string representations of the action name. This approach is only effective if you have some ROS code running that knows how to interpret the string representations
 and actuate it on the robot, thereby requiring a middle man. A more direct way to control the robot is to have
-action execution publish more typical ROS messages that specify the actuation. For example, on turtlebot robots, and various other robots, it is common to publish a ROS Twist message over a period of time to have the robot move. In this example code, we setup the BURLAP environment so that action execution results in publishing a Twist message for a fixed duration, thereby directly controlling the robot without a middle-man ROS script. We also then use a `TerminalExplorer` over the Environment we created so that you can manually control the robot through the terminal to test it out. 
+action execution publish more typical ROS messages that specify the actuation. For example, on turtlebot robots, and various other robots, it is common to publish a ROS Twist message over a period of time to have the robot move. In this example code, we setup the BURLAP environment so that action execution results in publishing a Twist message for a fixed duration, thereby directly controlling the robot without a middle-man ROS script. We also then use an `EnvironmentShell` over the Environment we created so that you can manually control the robot through the terminal to test it out. 
 
 ```
 public static void main(String [] args){
