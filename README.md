@@ -131,7 +131,7 @@ public class Example1 {
 		env.setPrintStateAsReceived(true);
 
 		Policy randPolicy = new RandomPolicy(domain);
-		randPolicy.evaluateBehavior(env, 100);
+		PolicyUtils.rollout(randPolicy, env, 100);
 
 	}
 
