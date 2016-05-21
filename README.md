@@ -151,7 +151,7 @@ In this code, we have action execution for all actions handled by a single `Acti
 
 `rostopic echo burlap_action`
 
-which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random GridWorld policy running, so you should see a random assorment of "north," "south," "east," and "west."
+which will print the strings received from BURLAP as actions are executed. Note that in this example code we simply have a random  policy running, so you should see a random assorment of "action1," and "action2."
 
 ###Example 2
 In the last example we setup an environment that published actions as string representations of the action name. This approach is only effective if you have some ROS code running that knows how to interpret the string representations
