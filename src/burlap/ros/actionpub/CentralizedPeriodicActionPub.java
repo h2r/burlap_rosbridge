@@ -1,6 +1,6 @@
 package burlap.ros.actionpub;
 
-import burlap.mdp.singleagent.GroundedAction;
+import burlap.mdp.core.Action;
 import ros.tools.PeriodicPublisher;
 
 /**
@@ -22,20 +22,20 @@ public class CentralizedPeriodicActionPub implements ActionPublisher{
 	protected PeriodicPublisher ppub;
 
 	/**
-	 * The ROS message to which the provided {@link ros.tools.PeriodicPublisher} will be flipped when this objects {@link #publishAction(GroundedAction)} method is called.
+	 * The ROS message to which the provided {@link ros.tools.PeriodicPublisher} will be flipped when this objects {@link #publishAction(Action)} method is called.
 	 */
 	protected Object msg;
 
 	/**
-	 * The time delay returned by the {@link #publishAction(GroundedAction)} method.
+	 * The time delay returned by the {@link #publishAction(Action)} method.
 	 */
 	protected int timeDelay;
 
 	/**
 	 * Initializes
 	 * @param ppub the {@link ros.tools.PeriodicPublisher} whose message will be altered by this {@link burlap.ros.actionpub.ActionPublisher}.
-	 * @param msg the ROS message to which the provided {@link ros.tools.PeriodicPublisher} will be flipped when this objects {@link #publishAction(GroundedAction)} method is called.
-	 * @param timeDelay the time delay returned by the {@link #publishAction(GroundedAction)} method.
+	 * @param msg the ROS message to which the provided {@link ros.tools.PeriodicPublisher} will be flipped when this objects {@link #publishAction(Action)} method is called.
+	 * @param timeDelay the time delay returned by the {@link #publishAction(Action)} method.
 	 */
 	public CentralizedPeriodicActionPub(PeriodicPublisher ppub, Object msg, int timeDelay) {
 		this.ppub = ppub;
@@ -78,23 +78,23 @@ public class CentralizedPeriodicActionPub implements ActionPublisher{
 	}
 
 	/**
-	 * Returns the time delay in milliseconds returned by the {@link #publishAction(GroundedAction)} method
-	 * @return the time delay in milliseconds returned by the {@link #publishAction(GroundedAction)} method
+	 * Returns the time delay in milliseconds returned by the {@link #publishAction(Action)} method
+	 * @return the time delay in milliseconds returned by the {@link #publishAction(Action)} method
 	 */
 	public int getTimeDelay() {
 		return timeDelay;
 	}
 
 	/**
-	 * Sets the time delay in milliseconds returned by the {@link #publishAction(GroundedAction)} method
-	 * @param timeDelay the time delay in milliseconds returned by the {@link #publishAction(GroundedAction)} method
+	 * Sets the time delay in milliseconds returned by the {@link #publishAction(Action)} method
+	 * @param timeDelay the time delay in milliseconds returned by the {@link #publishAction(Action)} method
 	 */
 	public void setTimeDelay(int timeDelay) {
 		this.timeDelay = timeDelay;
 	}
 
 	@Override
-	public int publishAction(GroundedAction a) {
+	public int publishAction(Action a) {
 		this.ppub.setMsg(msg);
 		return this.timeDelay;
 	}

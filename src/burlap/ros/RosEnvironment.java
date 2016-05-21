@@ -2,12 +2,12 @@ package burlap.ros;
 
 import burlap.debugtools.DPrint;
 import burlap.mdp.auxiliary.common.NullTermination;
+import burlap.mdp.core.Action;
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.GroundedAction;
-import burlap.mdp.singleagent.RewardFunction;
 import burlap.mdp.singleagent.common.NullRewardFunction;
+import burlap.mdp.singleagent.model.RewardFunction;
 import com.fasterxml.jackson.databind.JsonNode;
 import ros.RosBridge;
 import ros.RosListenDelegate;
@@ -210,8 +210,8 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 
 
 
-	protected double getMostRecentRewardSignal(State s, GroundedAction ga, State sprime) {
-		return this.rf.reward(s, ga, sprime);
+	protected double getMostRecentRewardSignal(State s, Action a, State sprime) {
+		return this.rf.reward(s, a, sprime);
 	}
 
 	/**

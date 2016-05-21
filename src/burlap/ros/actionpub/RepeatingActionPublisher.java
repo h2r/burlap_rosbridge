@@ -1,6 +1,6 @@
 package burlap.ros.actionpub;
 
-import burlap.mdp.singleagent.GroundedAction;
+import burlap.mdp.core.Action;
 import ros.Publisher;
 import ros.RosBridge;
 
@@ -8,14 +8,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * An {@link burlap.ros.actionpub.ActionPublisher} that allows a single call to {@link #publishAction(GroundedAction)}
+ * An {@link burlap.ros.actionpub.ActionPublisher} that allows a single call to {@link #publishAction(Action)}
  * to publish a ROS message multiple times at a given rate. This is useful, for example, if to execute a complete "rotate" action
  * a geometry_msgs/Twist message needs to be published to a robot multiple times in quick succession. This class can either
- * be synchronous, in which the {@link #publishAction(GroundedAction)} method blocks until
- * all repeated publishes are complete; or asynchronous, in which the {@link #publishAction(GroundedAction)} method
+ * be synchronous, in which the {@link #publishAction(Action)} method blocks until
+ * all repeated publishes are complete; or asynchronous, in which the {@link #publishAction(Action)} method
  * returns immediately after starting its multiple publish calls in a separate thread.
  * <p>
- * Note that by default, the {@link #publishAction(GroundedAction)} method will return a delay time
+ * Note that by default, the {@link #publishAction(Action)} method will return a delay time
  * of zero if set to asynchronous, or the period is set to synchronous.
  * However, you can change this value with the {@link #setDelayTime(int)} method or by using the more complete constructor.
  * @author James MacGlashan.
@@ -35,12 +35,12 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 	protected int period;
 
 	/**
-	 * The number of times a message will be published for each call of {@link #publishAction(GroundedAction)}
+	 * The number of times a message will be published for each call of {@link #publishAction(Action)}
 	 */
 	protected int n;
 
 	/**
-	 * If true, then {@link #publishAction(GroundedAction)} blocks until all messages
+	 * If true, then {@link #publishAction(Action)} blocks until all messages
 	 * have been published. If false, then the method immediately returns after starting publishing
 	 */
 	protected boolean synchronous;
@@ -52,15 +52,15 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 
 
 	/**
-	 * Initializes. If synchronous is set to true, the returned delay time by {@link #publishAction(GroundedAction)} will
+	 * Initializes. If synchronous is set to true, the returned delay time by {@link #publishAction(Action)} will
 	 * be set to the same as the period.
 	 * @param topic the ROS topic to publish to
 	 * @param msgType the ROS message type of the ROS topic
 	 * @param rosBridge the {@link ros.RosBridge} connection
 	 * @param msg the constant ROS message that will always be published
 	 * @param period the time delay between subsequent publishes to ros
-	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(GroundedAction)}
-	 * @param synchronous if true, {@link #publishAction(GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(Action)}
+	 * @param synchronous if true, {@link #publishAction(Action)} returns immediately; if false, waits for all n publishes to complete.
 	 */
 	public RepeatingActionPublisher(String topic, String msgType, RosBridge rosBridge, Object msg, int period, int n, boolean synchronous) {
 		super(topic, msgType, rosBridge);
@@ -80,9 +80,9 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 	 * @param rosBridge the {@link ros.RosBridge} connection
 	 * @param msg the constant ROS message that will always be published
 	 * @param period the time delay between subsequent publishes to ros
-	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(GroundedAction)}
-	 * @param synchronous if true, {@link #publishAction(GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
-	 * @param delayTime the time to delay returned by {@link #publishAction(GroundedAction)}.
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(Action)}
+	 * @param synchronous if true, {@link #publishAction(Action)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param delayTime the time to delay returned by {@link #publishAction(Action)}.
 	 */
 	public RepeatingActionPublisher(String topic, String msgType, RosBridge rosBridge, Object msg, int period, int n, boolean synchronous, int delayTime) {
 		super(topic, msgType, rosBridge);
@@ -98,8 +98,8 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 	 * @param pub the {@link ros.Publisher} used to publish action messages.
 	 * @param msg the constant ROS message that will always be published
 	 * @param period the  time delay between subsequent publishes to ros
-	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(GroundedAction)}
-	 * @param synchronous if true, {@link #publishAction(GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(Action)}
+	 * @param synchronous if true, {@link #publishAction(Action)} returns immediately; if false, waits for all n publishes to complete.
 	 */
 	public RepeatingActionPublisher(Publisher pub, Object msg, int period, int n, boolean synchronous) {
 		super(pub);
@@ -114,9 +114,9 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 	 * @param pub the {@link ros.Publisher} used to publish action messages.
 	 * @param msg the constant ROS message that will always be published
 	 * @param period the  time delay between subsequent publishes to ros
-	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(GroundedAction)}
-	 * @param synchronous if true, {@link #publishAction(GroundedAction)} returns immediately; if false, waits for all n publishes to complete.
-	 * @param delayTime the time to delay returned by {@link #publishAction(GroundedAction)}.
+	 * @param n the number of times a ros message will be published for each call of {@link #publishAction(Action)}
+	 * @param synchronous if true, {@link #publishAction(Action)} returns immediately; if false, waits for all n publishes to complete.
+	 * @param delayTime the time to delay returned by {@link #publishAction(Action)}.
 	 */
 	public RepeatingActionPublisher(Publisher pub, Object msg, int period, int n, boolean synchronous, int delayTime) {
 		super(pub);
@@ -160,24 +160,24 @@ public class RepeatingActionPublisher extends ActionPublisher.DirectActionPublis
 	}
 
 	/**
-	 * Returns the value that the method {@link #publishAction(GroundedAction)} will return.
-	 * @return the value that the method {@link #publishAction(GroundedAction)} will return.
+	 * Returns the value that the method {@link #publishAction(Action)} will return.
+	 * @return the value that the method {@link #publishAction(Action)} will return.
 	 */
 	public int getDelayTime() {
 		return delayTime;
 	}
 
 	/**
-	 * By default, {@link #publishAction(GroundedAction)} will return zero; use this method
+	 * By default, {@link #publishAction(Action)} will return zero; use this method
 	 * to set an alternative value for it to return.
-	 * @param delayTime the value that the method {@link #publishAction(GroundedAction)} will return.
+	 * @param delayTime the value that the method {@link #publishAction(Action)} will return.
 	 */
 	public void setDelayTime(int delayTime) {
 		this.delayTime = delayTime;
 	}
 
 	@Override
-	public int publishAction(GroundedAction a) {
+	public int publishAction(Action a) {
 		Timer timer = new Timer();
 		PublishTask pt = new PublishTask();
 		timer.schedule(pt, 0, this.period);
