@@ -2,9 +2,9 @@ package burlap.ros;
 
 import burlap.debugtools.DPrint;
 import burlap.mdp.auxiliary.common.NullTermination;
-import burlap.mdp.core.Action;
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.action.Action;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.common.NullRewardFunction;
 import burlap.mdp.singleagent.model.RewardFunction;

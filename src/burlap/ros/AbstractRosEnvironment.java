@@ -1,10 +1,9 @@
 package burlap.ros;
 
 
-import burlap.mdp.core.Action;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.action.ActionType;
 import burlap.mdp.core.state.State;
-
-import burlap.mdp.singleagent.action.ActionType;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.EnvironmentOutcome;
 import burlap.ros.actionpub.ActionPublisher;

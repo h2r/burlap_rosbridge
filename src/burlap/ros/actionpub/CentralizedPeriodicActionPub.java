@@ -1,6 +1,7 @@
 package burlap.ros.actionpub;
 
-import burlap.mdp.core.Action;
+
+import burlap.mdp.core.action.Action;
 import ros.tools.PeriodicPublisher;
 
 /**

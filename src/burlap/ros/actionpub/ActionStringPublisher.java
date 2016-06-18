@@ -1,6 +1,7 @@
 package burlap.ros.actionpub;
 
-import burlap.mdp.core.Action;
+
+import burlap.mdp.core.action.Action;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.msgs.std_msgs.PrimitiveMsg;
