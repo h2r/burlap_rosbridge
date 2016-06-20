@@ -58,7 +58,7 @@ public interface ActionPublisher {
 
 		/**
 		 * Initializes with a {@link ros.Publisher} for publishing action messages to ROS.
-		 * @param pub
+		 * @param pub the {@link Publisher} used to publish action messages to ROS.
 		 */
 		public DirectActionPublisher(Publisher pub){
 			this.pub = pub;

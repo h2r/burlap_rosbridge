@@ -47,7 +47,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	protected State curState;
 
 	/**
-	 * The optional {@link .RewardFunction} used to generate reward signals
+	 * The optional {@link RewardFunction} used to generate reward signals
 	 */
 	protected RewardFunction rf = new NullRewardFunction();
 
@@ -293,6 +293,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * to the terminal the string representation of the state. Override this method to provide
 	 * special handling of used state (e.g., adding virtual objects to the state that ROS does not perceive).
 	 * @param s the parsed state from the ROS message received.
+	 * @return returns the {@link State} object parsed from the ros message
 	 */
 	protected State onStateReceive(State s){
 		if(printStateAsReceived) {
