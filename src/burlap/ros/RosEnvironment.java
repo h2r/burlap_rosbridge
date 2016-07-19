@@ -2,10 +2,10 @@ package burlap.ros;
 
 import burlap.debugtools.DPrint;
 import burlap.mdp.auxiliary.common.NullTermination;
-import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.NullRewardFunction;
 import burlap.mdp.singleagent.model.RewardFunction;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,9 +37,9 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 
 
 	/**
-	 * The BURLAP {@link Domain} into which states will be parsed
+	 * The BURLAP {@link SADomain} into which states will be parsed
 	 */
-	protected Domain domain;
+	protected SADomain domain;
 
 	/**
 	 * The current {@link State} representation of the environment
@@ -87,7 +87,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param rosStateTopic the name of the ROS topic that publishes the state messages.
 	 * @param rosStateMessageType the message type of the ROS state messages.
 	 */
-	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType){
+	public RosEnvironment(SADomain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType){
 		this(domain, rosBridgeURI, rosStateTopic, rosStateMessageType, 1, 1);
 
 	}
@@ -107,7 +107,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
-	public RosEnvironment(Domain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+	public RosEnvironment(SADomain domain, String rosBridgeURI, String rosStateTopic, String rosStateMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
 		super(rosBridgeURI);
 		this.domain = domain;
 		this.rosBridge.subscribe(rosStateTopic, rosStateMessageType, this, rosBridgeThrottleRate, rosBridgeQueueLength);
@@ -126,7 +126,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param rosStateTopic the name of the ROS topic that publishes the burlap_msgs/burlap_state messages.
 	 * @param rosStateMessageType the message type of the ROS state messages.
 	 */
-	public RosEnvironment(Domain domain, RosBridge ros, String rosStateTopic, String rosStateMessageType){
+	public RosEnvironment(SADomain domain, RosBridge ros, String rosStateTopic, String rosStateMessageType){
 		super(ros);
 		this.domain = domain;
 		this.rosBridge.subscribe(rosStateTopic, rosStateMessageType, this);
@@ -147,7 +147,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
-	public RosEnvironment(Domain domain, RosBridge ros, String rosStateTopic, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+	public RosEnvironment(SADomain domain, RosBridge ros, String rosStateTopic, int rosBridgeThrottleRate, int rosBridgeQueueLength){
 		super(ros);
 		this.domain = domain;
 		this.rosBridge.subscribe(rosStateTopic, "burlap_msgs/burlap_state", this, rosBridgeThrottleRate, rosBridgeQueueLength);
@@ -171,7 +171,7 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	 * @param rosBridgeThrottleRate the ROS Bridge server throttle rate: how frequently the server will send state messages
 	 * @param rosBridgeQueueLength the ROS Bridge queue length: how many messages are queued on the server; queueing is a consequence of the throttle rate
 	 */
-	public RosEnvironment(Domain domain, RosBridge ros, String rosStateTopic, String rosStateMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
+	public RosEnvironment(SADomain domain, RosBridge ros, String rosStateTopic, String rosStateMessageType, int rosBridgeThrottleRate, int rosBridgeQueueLength){
 		super(ros);
 		this.domain = domain;
 		this.rosBridge.subscribe(rosStateTopic, rosStateMessageType, this, rosBridgeThrottleRate, rosBridgeQueueLength);

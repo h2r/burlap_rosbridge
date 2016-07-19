@@ -43,7 +43,8 @@ public class RosShellCommand implements ShellCommand {
 
 			os.println("ros pub topic msg_type msg\n" +
 					   "ros send msg\n" +
-					   "ros echo [-r][-t time_out][-f fragment_size] topic [msg_type]\n\n" +
+					   "ros echo [-r][-t time_out][-f fragment_size] topic [msg_type]\n" +
+					   "ros disc\n\n" +
 					"For publishing, the msg is the JSON formatted string of the ROS message. You will probably need to enclose the message " +
 					"in single quotes if there are spaces. Uses backslash for escape single quotes. " +
 					"For example, ros pub my_topic std_msgs/String '{\"data\": \"hello world!\"}'.\n\n" +
@@ -55,7 +56,9 @@ public class RosShellCommand implements ShellCommand {
 					"Rosbridge may also fail if you don't privde the message type and it's the first time you've published to it.\n " +
 					"By default echo will only print the next message received, use -r to continually print every subsequent message. To regain " +
 					"control of the shell when echo set to repeat, hit enter. If not repeating, " +
-					"you can set a time out to have control return with the -t option. By default time out is set to 10 seconds.");
+					"you can set a time out to have control return with the -t option. By default time out is set to 10 seconds.\n\n" +
+
+					"disc will disconnect (and unsubscribe/advertise) from the rosbridge server");
 
 			return 0;
 		}
@@ -79,6 +82,9 @@ public class RosShellCommand implements ShellCommand {
 			}
 
 			ros.sendRawMessage(args.get(1));
+		}
+		else if(args.get(0).equals("disc")){
+			ros.closeConnection();
 		}
 		else if(args.get(0).equals("echo")){
 			if(args.size() != 3 && args.size() != 2){
