@@ -196,6 +196,14 @@ public abstract class RosEnvironment extends AbstractRosEnvironment implements R
 	}
 
 
+	/**
+	 * Returns the domain of this environment.
+	 * @return the domain of this environment.
+	 */
+	public SADomain getDomain() {
+		return domain;
+	}
+
 	@Override
 	public State currentObservation() {
 		this.blockUntilStateReceived();
