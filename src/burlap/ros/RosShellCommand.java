@@ -14,6 +14,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,7 +64,7 @@ public class RosShellCommand implements ShellCommand {
 			return 0;
 		}
 
-		if(args.size() < 2){
+		if(args.size() < 1){
 			return -1;
 		}
 
@@ -85,6 +86,17 @@ public class RosShellCommand implements ShellCommand {
 		}
 		else if(args.get(0).equals("disc")){
 			ros.closeConnection();
+			try {
+				boolean closed = ros.awaitClose(10, TimeUnit.SECONDS);
+				if(closed){
+					os.println("Closed connection.");
+				}
+				else{
+					os.println("Failed to close connection after waiting for 10 seconds...");
+				}
+			} catch(InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		else if(args.get(0).equals("echo")){
 			if(args.size() != 3 && args.size() != 2){
