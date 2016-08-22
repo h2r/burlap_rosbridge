@@ -174,6 +174,7 @@ public static void main(String [] args){
 	//setup ROS information
 	String uri = "ws://localhost:9090";
 	String stateTopic = "/burlap_state"; //we won't need this in this example, so set it to anything
+	String stateMsg = "std_msgs/String"; //we won't need this in this example, so set it to anything
 	String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
 	String actionMsg = "geometry_msgs/Twist";
 
@@ -185,7 +186,12 @@ public static void main(String [] args){
 	Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
 
 	//create environment
-	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic);
+	RosEnvironment env = new RosEnvironment(domain, uri, stateTopic, stateMsg) {
+            @Override
+            public State unpackStateFromMsg(JsonNode data, String stringRep) {
+                return NullState.instance;
+            }
+        };
 
 	int period = 500; //publish every 500 milliseconds...
 	int nPublishes = 5; //...for 5 times for each action execution...
