@@ -9,15 +9,15 @@ burlap_rosbridge is indexed on Maven Central, so if you want to merely use it, a
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap_rosbridge</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
 </dependency>
 ```
-and it will automatically be downloaded. (DISCLAIMER: as of writing this, BURLAP 3 and burlap_rosbridge 3 are in development, and are not yet on Maven Central; you will have to manually install both.) Note that you will also want to explicitly include BURLAP (also on Maven Central) because BURLAP is set to not link transitively through burlap_rosbridge. This choice was made to make it clear which version of BURLAP you wanted to use in your project. To link to BURLAP, add
+and it will automatically be downloaded.  Note that you will also want to explicitly include BURLAP (also on Maven Central) because BURLAP is set to not link transitively through burlap_rosbridge. This choice was made to make it clear which version of BURLAP you wanted to use in your project. To link to BURLAP, add
 ```
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
 </dependency>
 ```
 or switch its version to whatever is appropriate.
@@ -64,7 +64,7 @@ Link to burlap_rosbridge from a project by adding the following to the `<depende
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>burlap_rosbridge</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
 </dependency>
 ```
 
